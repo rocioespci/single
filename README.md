@@ -1,6 +1,4 @@
-# SINGLe
-Rpackage for SINGLe (SNIPS in Nanopore reads of Gene Libraries)
-
+# minIONLogRegFull
 Full code for manuscript Espada et al 2020
 
 This git includes:
@@ -11,10 +9,10 @@ This git includes:
 ## Installation
 The easiest way to install this package is to run in an R console:
 require(devtools)
-install_github("rocioespci/SINGLe")
+install_github("rocioespci/minIONLogReg")
 
 ## Run
-Open main_SINGLe.r, edit the inputs and run as any R code. 
+Open main_minIONLogReg.r, edit the inputs and run as any R code. 
 
 ## Pipelines
 You can look at the codes and results in the html files, or you can open the Rmd files and modify them to analyse different datasets.

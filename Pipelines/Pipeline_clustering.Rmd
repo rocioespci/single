@@ -1,0 +1,236 @@
+---
+title: "Pipeline 3: Sequences clustering"
+author: "R. Espada"
+output:
+  html_document:
+    css: style.css
+    code_folding: hide
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+require(single)
+require(dendextend)
+knitr::opts_chunk$set(echo = TRUE, eval=TRUE)
+knitr::opts_knit$set(root.dir = "/home/robotspm/Documents/Rocio/LRminION2020/LRminION/TestNewVersion")
+```
+
+This code reproduces the figures 3 and 4 and (supplementary figures related) in the manuscript Espada et al. 2020.
+
+It is a pipeline to reproduce the clustering of sequences. It shows the analysis of two data sets: The first one is several barcodes, each of them with one mutant. The second one is only one barcode which includes three mutants.
+
+Some chunks are time-consuming. So if it is the first time you run this code for a particular dataset, indicate first_time=TRUE so everything is computed and save_partial_results=TRUE to save the workspace. If not, indicate first_time=FALSE and instead of running this chunks data will be loaded. 
+
+
+# General inputs
+```{r general inputs, eval=TRUE}
+first_time=T
+save_partial_results=T
+
+
+reference_sequence   = KT_wildtype
+reference_sequence <- strsplit(reference_sequence, "")[[1]]
+
+cat("Loaded reference of length: ", length(reference_sequence),"\n")
+```
+
+# 1st dataset
+
+Inputs
+```{r inputs 1, eval=TRUE}
+filename_to_evaluate = c("barcode05","barcode06","barcode07","barcode08","barcode09","barcode10","barcode11")
+
+cat("Folders to evaluate: ", filename_to_evaluate,sep="\n")
+```
+
+## Clustering
+
+Compute matrices of distance between sequences
+```{r compute distances 1}
+if(first_time){
+  distance_raw <- modified_hamming_distance_matrix(filename_to_evaluate, reference_sequence,weighting="raw", dist_function="dist_modified_hamming", cut_off=0.9, filename_out=NULL, filename_ids=c("05","06","07","08","09","10","11"))
+  
+  distance_corrected <- modified_hamming_distance_matrix(filename_to_evaluate, reference_sequence, weighting="priors", dist_function="dist_modified_hamming", cut_off=0.9, filename_out=NULL, filename_ids=c("05","06","07","08","09","10","11"))
+  
+  cat("done")
+}else{load("Distances.Rdata");cat("Loaded")}
+
+if(save_partial_results){ save(distance_raw, distance_corrected, file="Distances.Rdata") }
+```
+
+
+Compute clustering
+```{r compute clustering, eval=TRUE}
+k_clusters=7
+if(first_time){
+  raw_clustering  <- hclust(as.dist(distance_raw),  method = "ward.D2")
+  raw_clusters    <- cutree(raw_clustering, k=k_clusters)
+  
+  corrected_clustering  <- hclust(as.dist(distance_corrected),  method = "ward.D2")
+  corrected_clusters    <- cutree(corrected_clustering, k=k_clusters)
+  
+  corrected_ids <- parse_labels(rownames(distance_corrected), split = "_",element = 1, name=F)
+  raw_ids       <- parse_labels(rownames(distance_raw), split = "_",element = 1, name=F)
+ cat("done")
+}else{load("Clustering.Rdata");cat("Loaded")}
+
+if(save_partial_results){ save(raw_clustering, raw_clusters, corrected_clustering,corrected_clusters, corrected_ids,raw_ids, file="Clustering.Rdata") }
+```
+
+
+Plot clustering results
+```{r plot clustering 1, eval=TRUE, fig.width=15}
+
+par( mar=c(2,2,2,1), mfrow=c(1,2))
+plot_tree(hierarchical_clustering = raw_clustering, ids= raw_ids, k_clusters = k_clusters, colors = c(1:7), main="Raw weights")
+plot_tree(hierarchical_clustering = corrected_clustering, ids= corrected_ids, k_clusters = k_clusters, colors = c(1:7), main="Priors weights")
+
+```
+
+
+
+## Compute consensus by cluster
+
+Load sequences
+```{r load data for consensus 1,eval=TRUE}
+if(first_time){
+  data <- lapply(filename_to_evaluate, load_sequences_from_path)
+  filename_ids<- c(5:11)
+  ids_repetitions <- sapply(data, length)
+  ids <- rep(filename_ids, ids_repetitions)
+  
+  if(length(filename_to_evaluate)>1){ data      <- unlist(data, recursive=FALSE) }
+  
+  sequences <- t(sapply(data, function(x){x$nucleotide}))
+  weights_priors   <- t(sapply(data, function(x){x$p_right_priors_model})) 
+  weights_raw      <- t(sapply(data, function(x){1-x$p_error_minION})) 
+  cat("done")
+}else{load("Data.Rdata");cat("Loaded")}
+
+if(save_partial_results){ save(sequences,weights_priors,weights_raw, file="Data.Rdata") }
+```
+
+Calculate consensus sequence on each cluster
+```{r compute consensus 1,eval=TRUE}
+corrected_clusters_consensus <- clusters_consensus(sequences, corrected_clusters, reference_sequence)
+corrected_clusters_consensus_weighted <- clusters_consensus(sequences, corrected_clusters, reference_sequence,weights_vector = weights_priors)
+
+raw_clusters_consensus <- clusters_consensus(sequences, raw_clusters, reference_sequence)
+raw_clusters_consensus_weighted <- clusters_consensus(sequences, raw_clusters, reference_sequence,weights_vector = weights_raw)
+```
+
+```{r,eval=TRUE}
+cat("Clusters obtained with corrected weights, consensus computed without weighting")
+corrected_clusters_consensus
+cat("Clusters obtained with corrected weights, consensus computed weighting with p_priors")
+corrected_clusters_consensus_weighted
+cat("Clusters obtained with raw weights, consensus computed without weighting")
+raw_clusters_consensus
+cat("Clusters obtained with raw weights, consensus computed weighting with p_raw")
+raw_clusters_consensus_weighted
+```
+
+
+# 2nd dataset
+
+```{r inputs 2, eval=TRUE}
+filename_to_evaluate_set2 = "barcode12"
+```
+
+## Clustering
+
+Compute distance matrices
+```{r compute distance 2, eval=TRUE}
+if(first_time){
+  distance_raw_set2 <- modified_hamming_distance_matrix(filename_to_evaluate_set2, reference_sequence,weighting="raw", 
+                                   dist_function="dist_modified_hamming", cut_off=0.9,
+                                   filename_out=NULL,filename_ids=NULL)
+  
+  distance_corrected_set2 <- modified_hamming_distance_matrix(filename_to_evaluate_set2, reference_sequence,weighting="priors", dist_function="dist_modified_hamming", cut_off=0.9,
+                                    filename_out=NULL,filename_ids=NULL)
+  cat("done")
+}else{
+  load("Distances_set2.Rdata");cat("Loaded")
+}
+if(save_partial_results){
+  save(distance_raw_set2,distance_corrected_set2, file="Distances_set2.Rdata")
+}
+```
+
+
+Compute clustering
+```{r clustering 2, eval=TRUE}
+k_clusters=3
+raw_clustering_set2  <- hclust(as.dist(distance_raw_set2),  method = "ward.D2")
+raw_clusters_set2    <- cutree(raw_clustering_set2, k=k_clusters)
+
+corrected_clustering_set2  <- hclust(as.dist(distance_corrected_set2),  method = "ward.D2")
+corrected_clusters_set2    <- cutree(corrected_clustering_set2, k=k_clusters)
+
+```
+
+
+Plot clustering results
+```{r plot clustering 2, eval=TRUE, fig.width=15}
+
+par( mar=c(2,2,2,1), mfrow=c(1,2))
+plot_tree(hierarchical_clustering = raw_clustering_set2, ids= raw_clusters_set2, k_clusters = k_clusters, colors = c("red","blue","green"), main="Raw weights")
+plot_tree(hierarchical_clustering = corrected_clustering_set2, ids= corrected_clusters_set2, k_clusters = k_clusters, colors = c("red","blue","darkgreen"), main="Priors weights")
+
+```
+
+
+
+
+## Compute consensus by cluster
+
+Load sequences
+```{r load data 2,eval=TRUE}
+if(first_time){
+data_set2  <- lapply(filename_to_evaluate_set2, load_sequences_from_path)
+
+data_set2       <- unlist(data_set2 , recursive=FALSE) 
+sequences_set2        <- t(sapply(data_set2 , function(x){x$nucleotide}))
+weights_priors_set2   <- t(sapply(data_set2 , function(x){x$p_right_priors_model})) 
+weights_raw_set2      <- t(sapply(data_set2 , function(x){1-x$p_error_minION})) 
+}else{load("Data2.Rdata");cat("Loaded")}
+
+if(save_partial_results){ save(sequences_set2,weights_priors_set2,weights_raw_set2, file="Data2.Rdata") }
+```
+
+Calculate consensus sequence on each cluster
+```{r compute consensus 2,eval=TRUE}
+corrected_clusters_consensus_set2 <- clusters_consensus(sequences_set2, corrected_clusters_set2, reference_sequence)
+corrected_clusters_consensus_weighted_set2 <- clusters_consensus(sequences_set2, corrected_clusters_set2, reference_sequence,weights_vector = weights_priors_set2)
+
+raw_clusters_consensus_set2 <- clusters_consensus(sequences_set2, raw_clusters_set2, reference_sequence)
+raw_clusters_consensus_weighted_set2 <- clusters_consensus(sequences_set2, raw_clusters_set2, reference_sequence,weights_vector = weights_raw_set2)
+```
+
+```{r,eval=TRUE}
+cat("Clusters obtained with corrected weights, consensus computed without weighting")
+corrected_clusters_consensus_set2
+```
+
+
+```{r,eval=TRUE}
+cat("Clusters obtained with corrected weights, consensus computed weighting with p_priors")
+corrected_clusters_consensus_weighted_set2
+```
+
+```{r,eval=TRUE}
+cat("Clusters obtained with raw weights, consensus computed without weighting")
+raw_clusters_consensus_set2
+```
+
+```{r,eval=TRUE}
+cat("Clusters obtained with raw weights, consensus computed weighting with p_raw")
+raw_clusters_consensus_weighted_set2
+```
+
+```{r full plot clustering 2, eval=TRUE, fig.width=15}
+
+par( mar=c(10,2,2,1), mfrow=c(1,1))
+p <- plot_tree(hierarchical_clustering = corrected_clustering_set2, ids= corrected_clusters_set2, k_clusters = k_clusters, colors = c("red","blue","darkgreen"), main="Priors weights", consensus_labels = corrected_clusters_consensus_set2$consensus_mutations)
+
+```

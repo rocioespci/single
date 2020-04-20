@@ -1,0 +1,192 @@
+---
+title: "Pipeline 4: Variants' consensus"
+author: "R. Espada"
+output:
+  html_document:
+    css: style.css
+    code_folding: hide
+    df_print: paged
+---
+
+This code reproduces the figure 5 and (supplementary figures related) in the manuscript Espada et al. 2020.
+
+The aim is to evaluate the improvement in the computation of the consensus sequence when using the correction presented there.
+
+Some chunks are time-consuming. So if it is the first time you run this code for a particular dataset, indicate first_time=TRUE so everything is computed and save_partial_results=TRUE to save the workspace. If not, indicate first_time=FALSE and instead of running this chunks data will be loaded. 
+
+```{r setup, include=FALSE, eval=TRUE}
+knitr::opts_chunk$set(echo = TRUE, eval=TRUE)
+knitr::opts_knit$set(root.dir = "/home/robotspm/Documents/Rocio/LRminION2020/LRminION/TestNewVersion/")
+```
+
+# Inputs
+```{r inputs, warning=FALSE}
+require(single)
+require(bio3d);require(ggplot2)
+
+first_time           <- FALSE
+save_partial_results <- FALSE
+
+print_auxFile        <- FALSE  #store mutations list when computing consensus in auxiliary file
+
+reference_sequence   = KT_wildtype
+reference_sequence <- strsplit(reference_sequence, "")[[1]]
+
+# mutated variants (if know, as in this example), as a character matrix, each row a sequence
+ref_seqs <- read.fasta(system.file("extdata", "Mutations_sequences.fasta", package = "minIONLogRegFull") )
+
+# paths' names  where individual files of each sequence are stored, and the path to this paths
+path_names <- c("barcode05","barcode06","barcode07","barcode08","barcode09","barcode10","barcode11")
+inPath <- paste0(getwd(),"/")
+
+# size of subsets of data to use (vector)
+subsets     <- c(seq(2,10,by=2), seq(20,50,by=10))
+
+#replicates of each subset
+repetitions <- 100
+```
+
+Load racon results
+```{r}
+
+res_racoon <- read.table(system.file("extdata", "CountsRacon.txt", package = "minIONLogRegFull"))
+res_racoon <- res_racoon[-1,]
+res_racoon$bc <- plyr::mapvalues(res_racoon$bc,from=5:11, to=c("05","06","07","08","09","10","11"))
+res_racoon <- res_racoon %>% filter(wt!="-") %>% group_by(bc, cons.nseq, seq)%>%
+  dplyr::summarise(n.wrong.nucleotides=n())%>%  
+  ungroup() %>%   group_by(bc,cons.nseq)%>%
+  dplyr::summarise(mean_differences=as.numeric(sum(n.wrong.nucleotides)/100), 
+                   sd_differences= as.numeric(sd(n.wrong.nucleotides)/100),
+                   right_sequences=as.numeric(100-n()))%>%
+  mutate(nseq=cons.nseq,name=paste0("barcode", bc),
+         path=as.character(bc), ntest=integer(1)) %>% 
+  select(-cons.nseq)%>% ungroup() %>%   select(-bc)
+res_racoon$weights="Racon"
+res_racoon$homopolymers="Racon"
+
+
+```
+
+
+
+# Main computation of consensus
+
+Compute consensus in small sub-sets of sequences
+
+```{r compute}
+if(first_time){
+res_priors                  <- list()
+res_priors_fragment_homopol <- list()
+res_priors_sort_homopol     <- list()
+res_raw                  <- list()
+res_raw_fragment_homopol <- list()
+res_raw_sort_homopol     <- list()
+barcodes<- c("05","06","07","08","09","10","11")
+for(i in seq_along(barcodes) ){
+  cat(i,"\n")
+  res_priors[[i]] <- consensus_for_subsets(path_name = paste0(inPath,"barcode",barcodes[i],sep=""),nseq =subsets, nrep=repetitions, weighting = "priors", cutoff_prob = 0, reference_sequence = reference_sequence,reference_mutant = ref_seqs$ali[paste0("barcode",barcodes[i],sep=""),],auxFile = NULL)
+  
+  res_priors_fragment_homopol[[i]] <- consensus_for_subsets(path_name = paste0(inPath,"barcode",barcodes[i],sep=""),nseq =subsets, nrep=repetitions, weighting = "priors", cutoff_prob = 0, reference_sequence = reference_sequence,reference_mutant = ref_seqs$ali[paste0("barcode",barcodes[i],sep=""),],auxFile = NULL, fragment_homopolymers = T)
+  
+  res_priors_sort_homopol[[i]] <- consensus_for_subsets(path_name = paste0(inPath,"barcode",barcodes[i],sep=""),nseq =subsets, nrep=repetitions, weighting = "priors", cutoff_prob = 0, reference_sequence = reference_sequence,reference_mutant = ref_seqs$ali[paste0("barcode",barcodes[i],sep=""),],auxFile = NULL,sort_homopolymers = T)
+  
+    res_raw[[i]] <- consensus_for_subsets(path_name = paste0(inPath,"barcode",barcodes[i],sep=""),nseq =subsets, nrep=repetitions, weighting = "raw", cutoff_prob = 0, reference_sequence = reference_sequence,reference_mutant = ref_seqs$ali[paste0("barcode",barcodes[i],sep=""),],auxFile = NULL)
+  
+  res_raw_fragment_homopol[[i]] <- consensus_for_subsets(path_name = paste0(inPath,"barcode",barcodes[i],sep=""),nseq =subsets, nrep=repetitions, weighting = "raw", cutoff_prob = 0, reference_sequence = reference_sequence,reference_mutant = ref_seqs$ali[paste0("barcode",barcodes[i],sep=""),],auxFile = NULL, fragment_homopolymers = T)
+  
+  res_raw_sort_homopol[[i]] <- consensus_for_subsets(path_name = paste0(inPath,"barcode",barcodes[i],sep=""),nseq =subsets, nrep=repetitions, weighting = "raw", cutoff_prob = 0, reference_sequence = reference_sequence,reference_mutant = ref_seqs$ali[paste0("barcode",barcodes[i],sep=""),],auxFile = NULL,sort_homopolymers = T)
+  
+  
+}
+
+if(save_partial_results){
+  save(res_priors,res_priors_fragment_homopol,res_priors_sort_homopol, 
+       res_raw, res_raw_fragment_homopol, res_raw_sort_homopol, file="Consensus_auxiliary.Rdata")
+  }
+}else{load(file="Consensus_auxiliary.Rdata")}
+```
+
+Tidy data:
+
+1. Label data
+```{r tidy data I, warning=FALSE}
+res_priors                  <- lapply(res_priors,                  function(x){x$weights="Corrected"; x$homopolymers="Basic";return(x)})
+res_priors_fragment_homopol <- lapply(res_priors_fragment_homopol, function(x){x$weights="Corrected"; x$homopolymers="As units";return(x)})
+res_priors_sort_homopol     <- lapply(res_priors_sort_homopol,     function(x){x$weights="Corrected"; x$homopolymers="Sorted";return(x)})
+res_raw                     <- lapply(res_raw,                     function(x){x$weights="Basecaller"; x$homopolymers="Basic";return(x)})
+res_raw_fragment_homopol    <- lapply(res_raw_fragment_homopol,    function(x){x$weights="Basecaller"; x$homopolymers="As units";return(x)})
+res_raw_sort_homopol        <- lapply(res_raw_sort_homopol,        function(x){x$weights="Basecaller"; x$homopolymers="Sorted";return(x)})
+```
+
+2. unlist data
+```{r tidy data II, warning=FALSE}
+res_priors <- do.call(rbind, res_priors)
+res_priors_fragment_homopol <- do.call(rbind, res_priors_fragment_homopol)
+res_priors_sort_homopol <- do.call(rbind, res_priors_sort_homopol)
+res_raw <- do.call(rbind, res_raw)
+res_raw_fragment_homopol <- do.call(rbind, res_raw_fragment_homopol)
+res_raw_sort_homopol <- do.call(rbind, res_raw_sort_homopol)
+```
+
+3. merge data
+```{r tidy data III, warning=FALSE}
+all_data <- rbind(res_priors,res_priors_fragment_homopol,res_priors_fragment_homopol,res_raw, res_raw_fragment_homopol, res_priors_sort_homopol)
+all_data$name <- parse_labels(all_data$path, split="/", element=9, fixed=T, name = F)
+
+
+all_data  = full_join(all_data,res_racoon)
+```
+
+# Plots
+
+general aestetic values
+```{r plot general}
+green_fancy <- rgb(0,186,56,maxColorValue = 255)
+blue_fancy  <- rgb(97,156,255,maxColorValue = 255)
+red_fancy   <- rgb(248,118,109,alpha = 255, maxColorValue = 255)
+
+v_colors          <- c(red_fancy, green_fancy, blue_fancy, grey(0.5))
+names(v_colors)   <- c("Basic","Sorted","As units","Racon")
+v_linetype        <- c("solid","dashed","solid")
+names(v_linetype) <- c("Corrected","Basecaller","Racon")
+
+```
+
+
+## Plot how many times we get the exact correct sequence
+```{r plot Nseq}
+plot_all_Nseq <- ggplot(all_data,aes(x=nseq, y=right_sequences, linetype=weights, color=homopolymers))+
+  geom_line()+ geom_point(size=0.7)+
+  scale_color_manual(values=v_colors)+
+  scale_linetype_manual(values=v_linetype)+
+  facet_wrap(vars(all_data$name), nrow = 2)+
+  theme_bw()+
+  theme(text=element_text(size=10),legend.position = c(0.9,.22),
+        legend.text = element_text(size=rel(0.5)), legend.box = "horizontal",
+        legend.spacing.x = unit(0.1, "pt"),legend.spacing.y = unit(0.01,"pt"), 
+        legend.key.size = unit(15,"pt"), legend.title = element_text(size=8))+
+  xlab("Number of sequences averaged")+ylab("Correct consensus")+
+  labs(color="Weights",linetype="Consensus")
+plot_all_Nseq
+```
+
+
+## Plot average number of errors
+```{r plot Nmut}
+plot_all_Nmut <- ggplot(all_data,aes(x=nseq,  y=mean_differences, linetype=weights, color=homopolymers, ymin=mean_differences-sd_differences/2, ymax=mean_differences+sd_differences/2))+
+  geom_point(size=0.7) +  geom_line() +
+  scale_color_manual(values=v_colors)+
+  scale_linetype_manual(values=v_linetype)+
+  scale_x_continuous(breaks=seq(0,100,by=10))+
+  theme_bw()+ylab("Average errors [nucleotides]")+xlab("Number of sequences averaged")+
+  theme(text=element_text(size=10),legend.position = c(0.9,.15),
+        legend.text = element_text(size=rel(0.5)), legend.box = "horizontal",
+        legend.spacing.x = unit(0.1, "pt"),legend.spacing.y = unit(0.01,"pt"), 
+        legend.key.size = unit(15,"pt"), legend.title = element_text(size=8))+
+  geom_errorbar(width=0.5, linetype="solid")+
+  facet_wrap(vars(all_data$name), nrow=2)+
+  labs(color="Weights",linetype="Consensus")
+plot_all_Nmut
+```
+
+

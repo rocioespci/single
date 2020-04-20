@@ -1,0 +1,171 @@
+---
+title: "Pipeline 1: Fits and modified weights"
+author: "R. Espada"
+output: 
+  html_document:
+    css: style.css
+    code_folding: hide
+    df_print: paged
+---
+
+This code reproduces figure 1 in the manuscript Espada et al 2020. You might need to modify lines indicated with #*
+
+```{r setup, include=FALSE, eval=TRUE}
+knitr::opts_chunk$set(echo = TRUE, eval=TRUE)
+```
+
+# Inputs
+```{r packages, message=FALSE, include=FALSE, eval=TRUE}
+require(single)
+require(reshape2);require(ggplot2)
+require(gridExtra);require(grid)
+```
+
+This are the outputs of the fittings
+```{r inputs data}
+data_fits <- read.table("barcode01_forward_apriori_fits.txt", header = T)  #*
+data_mut <- read.table("barcode01_forward_apriori_data.txt", header = T)   #*
+```
+ 
+Important: choose position and error to plot
+```{r inpute pos and base}
+## Prepare data
+pos <- 20               #*   Choose position to plot
+mut.base <- "C"         #*   Choose nucleotide to plot
+```
+
+Choose and tidy data for selected position and error
+```{r tidy data}
+#Filter all data by position and base
+data_chosen_pos_base <- data_mut %>% 
+        filter(position==pos & nucleotide==mut.base) %>%
+        mutate(ratio=counts.wt/(counts+counts.wt), ratio_scaled =counts.wt.scaled/(counts.wt.scaled+counts.scaled))
+wt  <- as.character(data_chosen_pos_base$wt.base[1])
+
+#Filter all fits' data by position and base
+data_fits_chosen_pos_base <- data_fits%>%filter(position==pos & (nucleotide==mut.base | nucleotide==wt))
+class_fit_prior <- sapply(data_fits_chosen_pos_base$priors, class)
+if(any(class_fit_prior=="numeric")){  ind_out <- which(class_fit_prior=="numeric"); data_fits_chosen_pos_base <- data_fits_chosen_pos_base[-ind_out,] }
+
+#Construct fitting curves
+quality_range <- 0:50                         #* You'll draw the fitted curves for this Qscores (x-values)
+
+curve_fitted_raw <- data.frame(quality=quality_range, 
+                          value=glm.predict.(quality_range, slope = data_fits_chosen_pos_base$regular_slope,
+                                       intercept =data_fits_chosen_pos_base$regular_intercept))
+
+curve_fitted_corrected <- data.frame(quality=quality_range, 
+                          value=glm.predict.(quality_range, slope = data_fits_chosen_pos_base$prior_slope,
+                                       intercept =data_fits_chosen_pos_base$prior_intercept))
+
+# colnames(curve_fitted_raw) <- c("quality", "value")
+# curve_fitted_raw           <- melt(curve_fitted_raw, id.vars = "quality", variable.name = "nucleotide")
+# 
+# curve_fitted_corrected <- cbind(Qscore_range, sapply(data_fits_chosen_pos_base$priors, function(x){
+#                         y <- glm.predict.(quality_range, coefficients(x)[2],coefficients(x)[1]);
+#                         return(y)}))
+# colnames(curve_fitted_corrected) <- c("quality", data_fits_chosen_pos_base$nucleotide)
+# curve_fitted_corrected           <- melt(curve_fitted_corrected, id.vars = "quality", variable.name = "nucleotide")
+
+```
+
+
+# Plot fits
+General aestetic inputs
+```{r fits aestetics}
+theme_fits <- theme(axis.line = element_line(linetype = 1, size = 0.),
+                  text=element_text(size=10),
+                  axis.text.x=element_text(size=rel(0.9)),
+                  axis.text.y = element_text(size=rel(0.9)),
+                  legend.text=element_text(size=rel(0.6), lineheight = 0),
+                  legend.background = element_rect(fill=NA, colour = NULL),
+                  legend.key.size = unit(0.2,"cm"),
+                  plot.margin = unit(c(0,1,0,0), units = "mm"),
+                  panel.grid = element_blank(), panel.border = element_rect(size=1))
+```
+
+plot fits:
+```{r plot fits, fig.height=3, fig.width=5, message=FALSE, echo=FALSE, results='hide', warning=FALSE}
+plot_fit_raw <- ggplot(data_chosen_pos_base)+
+  geom_point(aes(x=quality, y=ratio), size=.5)+
+  geom_line(data=curve_fitted_raw, aes(x=quality, y=value), linetype="dashed", color=red_tr)+
+  scale_y_continuous(breaks=c(0,0.5,1),limits = c(0,1))+
+  xlab(expression(Q[score]))+ylab(expression(n[correct]))+ggtitle("A. raw")+
+  theme_bw()+theme_fits
+
+plot_fit_corrected <- ggplot(data_chosen_pos_base)+
+  geom_point(aes(x=quality, y=ratio_scaled), size=.5)+
+  geom_line(data=curve_fitted_corrected, aes(x=quality, y=value), linetype="dashed", color=red_tr)+
+  scale_y_continuous(breaks=c(0,0.5,1), limits = c(0,1))+
+  xlab(expression(Q[score]))+ylab(expression(n[correct]))+ggtitle("B. corrected")+
+  theme_bw()+theme_fits
+
+
+plot_fits <- gridExtra::grid.arrange(arrangeGrob(plot_fit_raw,plot_fit_corrected, nrow=1))
+plot_fits
+```
+
+# Plot histograms
+General aestetic inputs
+```{r hist aestetics}
+red_tr <- rgb(230,0,0,alpha = 200, maxColorValue = 255)
+green_tr <- rgb(0,122,0,alpha = 200, maxColorValue = 255)
+
+theme_histograms <- theme(axis.line = element_line(linetype = 1),
+                          text=element_text(size=10),
+                          axis.text.x=element_text(size=rel(0.9)),
+                          axis.text.y = element_text(size=rel(0.9)),
+                          legend.text=element_text(size=rel(0.6), lineheight = 0),
+                          legend.background = element_rect(fill=NA, colour = NULL),
+                          legend.key.size = unit(0.2,"cm"),
+                          plot.margin = unit(c(0,0,0,0), units = "mm"))
+
+```
+
+Compute histograms
+```{r hist compute}
+breaks <- seq(0,50,by=5)
+histogram_data <- data_chosen_pos_base %>% 
+  group_by(gr=cut(quality, breaks = breaks)) %>% 
+  dplyr::summarise(wt= sum(counts.wt), error=sum(counts), wt.scaled=sum(counts.wt.scaled), error.scaled=sum(counts.scaled)) %>%
+  mutate(x=breaks[-length(breaks)])
+n <- sum(histogram_data$wt)+sum(histogram_data$error)
+nscaled <- sum(histogram_data$wt.scaled)+sum(histogram_data$error.scaled)
+
+histogram_data <- melt(histogram_data, id.vars = c("gr","x"))
+histogram_data$corrected <- histogram_data$variable=="wt.scaled" | histogram_data$variable=="error.scaled" 
+histogram_data$correct <- histogram_data$variable=="wt" | histogram_data$variable=="wt.scaled" 
+histogram_data <- histogram_data%>%
+  group_by(corrected) %>%
+  dplyr::mutate(valueN=value/sum(value))
+```
+
+Plot histograms
+```{r plot hist, fig.height=3, fig.width=5, message=FALSE, echo=FALSE, results='hide'}
+plot_histogram_raw <- ggplot(histogram_data)+
+  geom_bar(data=histogram_data%>%filter(variable=="wt"),aes(x=x,y=value/n, fill=correct), stat="identity")+
+  geom_bar(data=histogram_data%>%filter(variable=="error"),aes(x=x,y=value/n, fill=correct), stat="identity", color=red_tr)+
+  scale_x_continuous(breaks=round(histogram_data$x), labels = histogram_data$gr)+
+  scale_fill_manual(values=c(red_tr, green_tr))+
+  theme_classic()+xlab(expression(Q[score]))+ylab("Counts")+ggtitle("C Raw")+
+  theme(legend.position='none')+theme_histograms+
+  theme(axis.text.x=element_text(angle=90,hjust = 1, vjust = 0.5, size=rel(0.9)))
+
+plot_histogram_corrected <- ggplot(histogram_data)+
+  geom_bar(data=histogram_data%>%filter(variable=="error.scaled"),aes(x=x,y=value/nscaled, fill=correct), stat="identity")+
+  geom_bar(data=histogram_data%>%filter(variable=="wt.scaled"),aes(x=x,y=value/nscaled, fill=correct), stat="identity")+
+  scale_x_continuous(breaks=round(histogram_data$x), labels = histogram_data$gr)+
+  scale_fill_manual(values=c(red_tr, green_tr),labels=c("Sequencing errors","Correct reads"), name="")+
+  theme_classic()+xlab(expression(Q[score]))+ylab("counts")+ggtitle("D Corrected")+
+  theme(legend.position = c(0.6, 1))+theme_histograms+
+  theme(axis.text.x=element_text(angle=90,hjust = 1, vjust = 0.5, size=rel(0.9)))
+
+  
+plot_histograms <- gridExtra::grid.arrange(arrangeGrob(plot_histogram_raw,plot_histogram_corrected, nrow=1))
+plot_histograms
+#ggsave(plot_histograms, 
+       #width=8, height = 4.5, units = "cm",    
+       #filename = paste0("Fig_schema",pos,mut.base,"_v2.png"))
+```
+
+

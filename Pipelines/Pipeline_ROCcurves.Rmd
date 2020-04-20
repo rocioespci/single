@@ -1,0 +1,258 @@
+---
+title: "Pipeline 2: ROC curve"
+author: "R. Espada"
+output: 
+  html_document:
+    css: style.css
+    code_folding: hide
+    df_print: paged
+---
+
+This code reproduces figure 2 in the manuscript Espada et al 2020. 
+
+Using a set of known mutants, this code calculates the signal and noise obtained with or without the proposed correction. 
+
+
+```{r setup, include=FALSE, eval=TRUE}
+knitr::opts_chunk$set(echo = TRUE, eval=TRUE)
+
+```
+
+# Inputs
+Load general inputs
+```{r inputs I, include=FALSE, eval=TRUE}
+require(single)
+require(ggplot2);require(reshape2);require(bio3d);require(ggpubr)
+
+reference_sequence <- KT_wildtype
+reference_sequence <- unlist(strsplit(reference_sequence,""))
+mutant_sequences   <- read.fasta(system.file("extdata", "Mutations_sequences.fasta", package = "minIONLogRegFull"))$ali #known sequences of mutants (different from reference_sequence)
+
+# Information of where to find the files _forward_FrequenciesModelPriors.txt
+inPath <- paste0(getwd(),"/")  #path #*
+inNames <- c("barcode05","barcode06","barcode07","barcode08","barcode09","barcode10","barcode11")  #pre-fix #*
+```
+
+Mutant sequences to table
+```{r inputs mutants}
+data_mutations <- list()
+for(i in 1:nrow(mutant_sequences)){
+  index <- which (mutant_sequences[i,]!= reference_sequence)
+  data_mutations[[i]] <- data.frame(sequence_id=rep(rownames(mutant_sequences)[i], length(index) ),
+                              position = index,  nucleotide =mutant_sequences[i,index])
+}
+data_mutations <- do.call(rbind,data_mutations)
+```
+
+# Compute
+Load and shape data from all mutants (_forward_FrequenciesModelPriors.txt files and compare them to reference_sequence)
+```{r load data, warning=FALSE}
+n <-0
+for(bc_i in inNames){
+  n<- n+1
+  #Barcode info
+  actual_mutations <- data_mutations%>%                   #mutations present in this barcode
+    filter(sequence_id==bc_i)%>% select(nucleotide, position)
+  actual_mutations <- actual_mutations[which(actual_mutations$nucleotide!="-"),]
+  
+  #load data
+  dataF <- read.table(paste0(inPath,bc_i,"_forward_FrequenciesModelPriors.txt"), header=T)
+  dataR <- read.table(paste0(inPath,bc_i,"_reverse_FrequenciesModelPriors.txt"), header=T)
+  
+  dataF <- dataF%>% filter(isWT==0 & nucleotide!="-")    #remove gaps and wildtype (I only study mutations/errors)
+  dataR <- dataR%>% filter(isWT==0 & nucleotide!="-")    #remove gaps and wildtype (I only study mutations/errors)
+  
+  #combine forward and reverse, and choose relevant columns
+  data <- rbind(dataF, dataR) %>%
+    mutate(sequence_id=bc_i, p_right_minION = 1-p_error_minION)%>%
+    select(sequence_id,position, nucleotide, counts, quality, p_right_minION, p_right_null_model, p_right_priors_model) %>%
+    filter(!is.na(p_right_priors_model))
+  
+  signal_data_aux <- left_join(actual_mutations, data,by = c("nucleotide", "position"))
+  noise_data_aux  <- anti_join(data, actual_mutations,by = c("nucleotide", "position"))
+  
+  if(nrow(signal_data_aux)+nrow(noise_data_aux) != nrow(data)){stop('Check joins of data')}
+  
+  #Store data
+  if(n==1){
+    signal_data <- signal_data_aux
+    noise_data  <- noise_data_aux 
+  }else{
+    signal_data <- rbind(signal_data,signal_data_aux)
+    noise_data  <- rbind(noise_data, noise_data_aux) 
+  }
+  rm(signal_data_aux, noise_data_aux, dataF, dataR, data)
+}
+```
+
+Compute signal and noise
+```{r compute signal and noise}
+p_cutoff_vec <- sort(c(0,10^seq(-10,-1, by=.5),seq(0.1,.99, by=0.01)))
+
+signal_tp <- data.frame(matrix(NA, ncol=7, nrow=length(p_cutoff_vec)))
+colnames(signal_tp) <- c("pcutoff", "Guppy", "Correction Naive", "SINGLe", "Guppy - weighted", "Correction Naive - weighted", "SINGLe - weighted")
+signal_fn <- noise_tn <- noise_fp <- signal_tp
+for(i in seq_along(p_cutoff_vec)){
+  p_cutoff <- p_cutoff_vec[i]
+  
+  signal_tp_aux <-  signal_data %>%
+    summarise(counts_minION = sum(counts[p_right_minION       >= p_cutoff]), 
+              counts_null   = sum(counts[p_right_null_model   >= p_cutoff]), 
+              counts_priors = sum(counts[p_right_priors_model >= p_cutoff]), 
+              counts_minION_w = sum( (counts*p_right_minION)       [p_right_minION       >= p_cutoff]),
+              counts_null_w   = sum( (counts*p_right_null_model)   [p_right_null_model   >= p_cutoff]), 
+              counts_priors_w = sum( (counts*p_right_priors_model) [p_right_priors_model >= p_cutoff])
+    )
+  
+  signal_fn_aux <-  signal_data %>%
+    summarise(counts_minION = sum(counts[p_right_minION       < p_cutoff]), 
+              counts_null   = sum(counts[p_right_null_model   < p_cutoff]), 
+              counts_priors = sum(counts[p_right_priors_model < p_cutoff]), 
+              counts_minION_w = sum( (counts*p_right_minION)       [p_right_minION       < p_cutoff]),
+              counts_null_w   = sum( (counts*p_right_null_model)   [p_right_null_model   < p_cutoff]), 
+              counts_priors_w = sum( (counts*p_right_priors_model) [p_right_priors_model < p_cutoff])
+    )
+  
+  noise_fp_aux <-  noise_data %>%
+    summarise(counts_minION = sum(counts[p_right_minION       >= p_cutoff]), 
+              counts_null   = sum(counts[p_right_null_model   >= p_cutoff]), 
+              counts_priors = sum(counts[p_right_priors_model >= p_cutoff]), 
+              counts_minION_w = sum( (counts*p_right_minION)       [p_right_minION       >= p_cutoff]),
+              counts_null_w   = sum( (counts*p_right_null_model)   [p_right_null_model   >= p_cutoff]), 
+              counts_priors_w = sum( (counts*p_right_priors_model) [p_right_priors_model >= p_cutoff])
+    )
+  
+  noise_tn_aux <-  noise_data %>%
+    summarise(counts_minION = sum(counts[p_right_minION       < p_cutoff]), 
+              counts_null   = sum(counts[p_right_null_model   < p_cutoff]), 
+              counts_priors = sum(counts[p_right_priors_model < p_cutoff]), 
+              counts_minION_w = sum( (counts*p_right_minION)       [p_right_minION       < p_cutoff]),
+              counts_null_w   = sum( (counts*p_right_null_model)   [p_right_null_model   < p_cutoff]), 
+              counts_priors_w = sum( (counts*p_right_priors_model) [p_right_priors_model < p_cutoff])
+    )
+  
+  signal_tp[i,] <- c(p_cutoff, unlist(signal_tp_aux))
+  noise_fp [i,] <- c(p_cutoff, unlist(noise_fp_aux))
+  signal_fn[i,] <- c(p_cutoff, unlist(signal_fn_aux))
+  noise_tn [i,] <- c(p_cutoff, unlist(noise_tn_aux))
+}
+
+
+aux_tp <- melt(signal_tp[,c(1:4)], id.vars = "pcutoff", value.name = "signal_tp")
+aux_fp <- melt(noise_fp[,c(1:4)], id.vars = "pcutoff", value.name = "noise_fp")
+aux_fn <- melt(signal_fn[,c(1:4)], id.vars = "pcutoff", value.name = "signal_fn")
+aux_tn <- melt(noise_tn[,c(1:4)], id.vars = "pcutoff", value.name = "noise_tn")
+rates <- aux_tp %>% full_join(aux_fp,by = c("pcutoff", "variable"))%>% full_join(aux_fn,by = c("pcutoff", "variable"))%>%full_join(aux_tn,by = c("pcutoff", "variable"))
+rates <- rates%>%
+  mutate(ratio = signal_tp / noise_fp)%>%
+  mutate(tpr   = signal_tp / (signal_tp + signal_fn))%>%
+  mutate(fpr   = noise_fp /  (noise_fp + noise_tn))
+
+aux_tp <- melt(signal_tp[,c(1,5:7)], id.vars = "pcutoff", value.name = "signal_tp")
+aux_fp <- melt(noise_fp[,c(1,5:7)], id.vars = "pcutoff", value.name = "noise_fp")
+aux_fn <- melt(signal_fn[,c(1,5:7)], id.vars = "pcutoff", value.name = "signal_fn")
+aux_tn <- melt(noise_tn[,c(1,5:7)], id.vars = "pcutoff", value.name = "noise_tn")
+rates_w <-  aux_tp %>% full_join(aux_fp,by = c("pcutoff", "variable"))%>% full_join(aux_fn,by = c("pcutoff", "variable"))%>%full_join(aux_tn,by = c("pcutoff", "variable"))
+rates_w <- rates_w%>%
+  mutate(ratio=signal_tp/noise_fp)%>%
+  mutate(tpr = signal_tp/ (signal_tp + signal_fn))%>%
+  mutate(fpr = noise_fp / (noise_fp + noise_tn))
+
+
+#write.table(rates, file="ROCcurve_rates.txt", row.names = F)
+#write.table(rates_w, file="ROCcurve_ratesweighted.txt", row.names = F)
+
+```
+
+
+
+# Plots
+
+General aestetics
+```{r plot general}
+theme_pannel_1c <- theme(line=element_line(colour = "black", size = 0.5, linetype = "dashed",lineend = "square"), 
+                         rect= element_rect(fill = NULL, colour = NULL, size = 1,linetype = "solid",inherit.blank = FALSE), 
+                         text=element_text(size=10),
+                         axis.text.x=element_text(angle=0, size=rel(0.9)),
+                         axis.text.y=element_text(angle=0, size=rel(0.9)),
+                         legend.text=element_text(size=rel(0.6), lineheight = 0),
+                         legend.title=element_text(size=rel(0.65)), 
+                         legend.key.height = unit(0.2,"cm"),
+                         legend.background = element_rect(fill=NULL, colour = NULL),
+                         legend.position = c(0.01,0.98),
+                         legend.justification = c(0,1)
+)  
+```
+
+
+## Plot of signal to noise vs cut-off (Fig 1 and supplementary)
+```{r plot main}
+plot_ratio <-
+ggplot(rates, aes(pcutoff, y=ratio, col=variable))+geom_point(size=0.3)+geom_line()+
+  ylab("Ratio signal to noise")+xlab(expression("Cut off on p"["right"]))+
+  scale_color_discrete("Protocol")+
+  theme_bw()+theme_pannel_1c
+plot_ratio
+plot_ratio_w <-
+  ggplot(rates_w, aes(pcutoff, y=ratio, col=variable))+geom_point(size=0.3)+geom_line()+
+  ylab("Ratio signal to noise")+xlab(expression("Cut off on p"["right"]))+
+  scale_color_discrete("Protocol")+
+  theme_bw()+theme_pannel_1c
+plot_ratio_w
+
+
+#TPR and FPR
+plot_tpr <- ggplot(rates, aes(pcutoff, y=tpr, col=variable))+geom_point(size=0.7)+scale_color_discrete("Protocol")+
+  geom_line()+  theme_bw()+theme_pannel_1c+theme(legend.justification = c(.5,.5))
+plot_fpr <- ggplot(rates, aes(pcutoff, y=fpr, col=variable))+geom_point(size=0.7)+scale_color_discrete("Protocol")+
+  geom_line()+  theme_bw()+theme_pannel_1c+theme(legend.justification = c(.5,.5))
+
+
+plot_suppl <- ggarrange(plot_tpr, plot_fpr, ncol=2,nrow=1, common.legend = T, legend = "bottom")
+  
+plot_suppl
+```
+
+
+Other plots (ROC curve and FN TP FP TN)
+```{r plot ROC}
+plot_roc <- ggplot(rates, aes(y=tpr,x=fpr, col=variable))+geom_point()+
+  geom_line()+ggtitle("ROC curve")
+plot_roc
+plot_tp <- ggplot(rates, aes(x=pcutoff, y=signal_tp, col=variable))+geom_point()+
+  geom_line()+ggtitle("True Positives")
+plot_tp
+plot_tn <- ggplot(rates, aes(x=pcutoff, y=noise_tn, col=variable))+geom_point()+
+  geom_line()+ggtitle("True Negatives")
+plot_tn
+plot_fp <- ggplot(rates, aes(x=pcutoff, y=noise_fp, col=variable))+geom_point()+
+  geom_line()+ggtitle("False Positives")
+plot_fp
+plot_fn <- ggplot(rates, aes(x=pcutoff, y=signal_fn, col=variable))+geom_point()+
+  geom_line()+ggtitle("False Negatives")
+plot_fn
+```
+
+
+## Weighted counts
+Repeat plots for weighted counts (instead of summing one to each occurrence, I sum the associated weight or prob_of_being_right)
+```{r plot all weighted}
+#Ratio signal to noise
+plot_ratio_w <- ggplot(rates_w, aes(pcutoff, y=ratio, col=variable))+ geom_line()+ylab("ratio signal to noise")+ggtitle("Signal to noise")
+plot_ratio_w
+
+plot_tpr_w <- ggplot(rates_w, aes(pcutoff, y=tpr, col=variable))+  geom_line()
+plot_tpr_w
+plot_fpr_w <- ggplot(rates_w, aes(pcutoff, y=fpr, col=variable))+  geom_line()
+plot_fpr_w
+plot_roc_w <- ggplot(rates_w, aes(y=tpr,x=fpr, col=variable))+  geom_line()+ggtitle("ROC curve")
+plot_roc_w
+plot_tp_w <- ggplot(rates_w, aes(x=pcutoff, y=signal_tp, col=variable))+  geom_line()+ggtitle("True Positives")
+plot_tp_w
+plot_tn_w <- ggplot(rates_w, aes(x=pcutoff, y=noise_tn, col=variable))+  geom_line()+ggtitle("True Negatives")
+plot_tn_w
+plot_fp_w <- ggplot(rates_w, aes(x=pcutoff, y=noise_fp, col=variable))+  geom_line()+ggtitle("False Positives")
+plot_fp_w
+plot_fn_w <- ggplot(rates_w, aes(x=pcutoff, y=signal_fn, col=variable))+  geom_line()+ggtitle("False Negatives")
+plot_fn_w
+```

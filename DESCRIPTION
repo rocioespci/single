@@ -1,0 +1,11 @@
+Package: single
+Type: Package
+Title: SNIPs in Nanopore reads of Gene Libraries
+Version: 0.1.0
+Author: Rocio Espada
+Maintainer: Rocio Espada <rocio.espada@espci.fr>
+Description: SNIPs in Nanopore reads of Gene Libraries
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
+Depends: tidyr, plyr, dplyr, reshape2
