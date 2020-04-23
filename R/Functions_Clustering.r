@@ -201,15 +201,15 @@ consensus_for_subsets <- function(path_name,nseq,nrep,weighting,cutoff_prob=0,
   if(fragment_homopolymers){
     reference_sequence <- sapply(homopolymer_positions_all, function(x){paste0(reference_sequence[x], collapse = "")})
     reference_mutant   <- sapply(homopolymer_positions_all, function(x){paste0(reference_mutant[x], collapse = "")})
-
   }
 
   #load sequences
   data       <- load_sequences_from_path(path_name)
   seqs       <- t(sapply(data, function(x){x$nucleotide}))
-  if(weighting=="raw"){       weights   <- t(sapply(data, function(x){1-x$p_error_minION}))      }
-  if(weighting=="naive"){     weights   <- t(sapply(data, function(x){x$p_right_null_model}))    }
-  if(weighting=="priors"){    weights   <- t(sapply(data, function(x){x$p_right_priors_model}))  }
+  if(weighting=="raw"){       weights   <- t(sapply(data, function(x){-10*log10(x$p_error_minION)}))      }
+  if(weighting=="naive"){     weights   <- t(sapply(data, function(x){-10*log10(1-x$p_right_null_model)}))    }
+  if(weighting=="priors"){    weights   <- t(sapply(data, function(x){-10*log10(1-x$p_right_priors_model)}))  }
+  weights[is.infinite(weights)]=93
 
   #Order sequences and probabilities in homopolyers, putting gaps in the end
   if(fragment_homopolymers){

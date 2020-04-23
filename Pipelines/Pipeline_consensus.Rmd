@@ -24,8 +24,8 @@ knitr::opts_knit$set(root.dir = "/home/robotspm/Documents/Rocio/LRminION2020/LRm
 require(single)
 require(bio3d);require(ggplot2)
 
-first_time           <- FALSE
-save_partial_results <- FALSE
+first_time           <- TRUE
+save_partial_results <- TRUE
 
 print_auxFile        <- FALSE  #store mutations list when computing consensus in auxiliary file
 
@@ -63,7 +63,6 @@ res_racoon <- res_racoon %>% filter(wt!="-") %>% group_by(bc, cons.nseq, seq)%>%
   select(-cons.nseq)%>% ungroup() %>%   select(-bc)
 res_racoon$weights="Racon"
 res_racoon$homopolymers="Racon"
-
 
 ```
 
@@ -110,12 +109,12 @@ Tidy data:
 
 1. Label data
 ```{r tidy data I, warning=FALSE}
-res_priors                  <- lapply(res_priors,                  function(x){x$weights="Corrected"; x$homopolymers="Basic";return(x)})
-res_priors_fragment_homopol <- lapply(res_priors_fragment_homopol, function(x){x$weights="Corrected"; x$homopolymers="As units";return(x)})
-res_priors_sort_homopol     <- lapply(res_priors_sort_homopol,     function(x){x$weights="Corrected"; x$homopolymers="Sorted";return(x)})
-res_raw                     <- lapply(res_raw,                     function(x){x$weights="Basecaller"; x$homopolymers="Basic";return(x)})
-res_raw_fragment_homopol    <- lapply(res_raw_fragment_homopol,    function(x){x$weights="Basecaller"; x$homopolymers="As units";return(x)})
-res_raw_sort_homopol        <- lapply(res_raw_sort_homopol,        function(x){x$weights="Basecaller"; x$homopolymers="Sorted";return(x)})
+res_priors                  <- lapply(res_priors,                  function(x){x$weights="SINGLe"; x$homopolymers="Basic";return(x)})
+res_priors_fragment_homopol <- lapply(res_priors_fragment_homopol, function(x){x$weights="SINGLe"; x$homopolymers="As units";return(x)})
+res_priors_sort_homopol     <- lapply(res_priors_sort_homopol,     function(x){x$weights="SINGLe"; x$homopolymers="Sorted";return(x)})
+res_raw                     <- lapply(res_raw,                     function(x){x$weights="Guppy"; x$homopolymers="Basic";return(x)})
+res_raw_fragment_homopol    <- lapply(res_raw_fragment_homopol,    function(x){x$weights="Guppy"; x$homopolymers="As units";return(x)})
+res_raw_sort_homopol        <- lapply(res_raw_sort_homopol,        function(x){x$weights="Guppy"; x$homopolymers="Sorted";return(x)})
 ```
 
 2. unlist data
@@ -148,7 +147,7 @@ red_fancy   <- rgb(248,118,109,alpha = 255, maxColorValue = 255)
 v_colors          <- c(red_fancy, green_fancy, blue_fancy, grey(0.5))
 names(v_colors)   <- c("Basic","Sorted","As units","Racon")
 v_linetype        <- c("solid","dashed","solid")
-names(v_linetype) <- c("Corrected","Basecaller","Racon")
+names(v_linetype) <- c("SINGLe","Guppy","Racon")
 
 ```
 
