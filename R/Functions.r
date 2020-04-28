@@ -1,5 +1,3 @@
-#** todo's
-
 ## Main functions
 ####################################################
 
@@ -437,50 +435,63 @@ SplitSequencesInFiles          <- function(inFile_prefix, reference_sequence, co
     write.table(df, file=paste0(bc,"/",bc,"_", names_sequences[i],".txt"), row.names = F)
   }
 }
-SplitSequencesInFastq          <- function(inFile_prefix){
-
+SplitSequencesInFastq          <- function(inFile_prefix,type="corrected"){
   #Output file
-  outFile=paste0(inFile_prefix, "_corrected.fastq")
+  if(type=="corrected"){  outFile=paste0(inFile_prefix, "_corrected.fastq")}
+  if(type=="raw")      {  outFile=paste0(inFile_prefix, "_guppy.fastq")}
+  if(type=="naive")    {  outFile=paste0(inFile_prefix, "_naive.fastq")}
   if(file.exists(outFile)){file.remove(outFile)}
 
-  # Load data
-  qtable <- read.table(paste0(inFile_prefix,"_FrequenciesModelPriors.txt"), header = T)
-  qtable <- qtable %>% select(position,nucleotide,quality,p_right_priors_model)
-  sequences <- readLines(paste0(inFile_prefix, "_FakeAli.fasta"))
-  quality   <- readLines(paste0(inFile_prefix,"_FakeAliQ.fasta"))
+  for(direction in c("forward","reverse")){
+    prefix_direction = paste0(inFile_prefix,"_",direction)
+    # Load data
+    colClasses        <- c("integer", "character" , "integer", "integer", "numeric",      "character","logical","numeric","numeric"  )
+    names(colClasses) <- c("position","nucleotide", "quality", "counts",  "p_error_minION","wt.base", "isWT",   "p_right_priors_model","p_right_null_model")
+    qtable            <- read.table(paste0(prefix_direction,"_FrequenciesModelPriors.txt"), header = T, colClasses = colClasses )
 
-  #Parse into matrix
-  lines_data <- seq(from = 2,to = length(sequences), by=2)
-  names_sequences <-  sub(pattern = ">", replacement = "", x=sequences[lines_data-1])
-  sequences <- sequences[lines_data]
-  quality <- quality[lines_data]
+    if(type=="corrected"){   qtable <- qtable %>% mutate(prob_error = 1-p_right_priors_model) %>%
+                                                  select(position,nucleotide,quality,prob_error)}
+    if(type=="raw")      {   qtable <- qtable %>% rename(prob_error = p_error_minION) %>%
+                                                  select(position,nucleotide,quality,prob_error)}
+    if(type=="naive")    {   qtable <- qtable %>% mutate(prob_error = 1-p_right_null_model) %>%
+                                                  select(position,nucleotide,quality,prob_error)}
 
-  sequences.list <- strsplit(sequences, split="")
-  quality.list <- strsplit(quality, split="", fixed = T)
+    sequences <- readLines(paste0(prefix_direction, "_FakeAli.fasta"))
+    quality   <- readLines(paste0(prefix_direction,"_FakeAliQ.fasta"))
 
-  sequences.matrix <- do.call(rbind,sequences.list)
-  quality.matrix <- do.call(rbind,quality.list)
+    #Parse into matrix
+    lines_data      <- seq(from = 2,to = length(sequences), by=2)
+    names_sequences <- sub(pattern = ">", replacement = "", x=sequences[lines_data-1])
+    sequences       <- sequences[lines_data]
+    quality         <- quality[lines_data]
 
+    sequences.list <- strsplit(sequences, split="")
+    quality.list   <- strsplit(quality, split="", fixed = T)
 
-  # Evaluate and save each sequence
-  nc <- ncol(sequences.matrix)
-  for(i in 1:length(sequences)){
-    df <- data.frame( nucleotide= sequences.matrix[i,], q = quality.matrix[i,], position=1:nc) %>%  # sequence + minION Qscore
-      mutate(quality=plyr::mapvalues(q, from = ascii$Symbol, to=ascii$Q, warn_missing = F)) %>%     # Qscore to numeric value
-      mutate(quality= as.numeric(levels(quality)[quality])) %>%                                     # convert Qscore to numeric datatype
-      left_join(qtable, by = c("nucleotide","position","quality")) %>%                              # merge with p_right from correction
-      mutate(Q_corrected = round(-10 * log10(p_right_priors_model) ))                               # p_right_corrected to Qscore_corrected
-    df$Q_corrected[df$Q_corrected>93] <- 93                                                         # Upper bound to Qscore
-    df$Q_corrected[is.na(df$Q_corrected)] <- df$quality[is.na(df$Q_corrected)]                      # For wildtype keep original Qscore
-    df <- df %>%
-      mutate(Qsym_corrected=plyr::mapvalues(Q_corrected, from = ascii$Q, to=as.character(ascii$Symbol), warn_missing = F))  # Qscore to symbols
+    sequences.matrix <- do.call(rbind,sequences.list)
+    quality.matrix   <- do.call(rbind,quality.list)
 
 
-    #Write sequence into outFile
-    cat(">",names_sequences[i],          "\n", sep="", file = outFile, append = T)
-    cat(as.character(df$nucleotide),     "\n", sep="", file = outFile, append = T)
-    cat("+\n",                                         file = outFile, append = T)
-    cat(as.character(df$Qsym_corrected), "\n", sep="", file = outFile, append = T)
+    # Evaluate and save each sequence
+    nc <- ncol(sequences.matrix)
+    for(i in 1:length(sequences)){
+      df <- data.frame( nucleotide= sequences.matrix[i,], q =quality.matrix[i,], position=1:nc, stringsAsFactors = F) %>%  # sequence + minION Qscore
+        mutate(quality=plyr::mapvalues(q, from = ascii$Symbol, to=ascii$Q, warn_missing = F)) %>%     # Qscore to numeric value
+        mutate(quality= as.numeric(quality)) %>%                                                      # convert Qscore to numeric datatype
+        left_join(qtable, by = c("nucleotide","position","quality")) %>%                              # merge with p_right from correction
+        mutate(Q_corrected = round(-10 * log10(prob_error) ))                                             # p_right_corrected to Qscore_corrected
+      df$Q_corrected[df$Q_corrected>93] <- 93                                                         # Upper bound to Qscore
+      df$Q_corrected[is.na(df$Q_corrected)] <- df$quality[is.na(df$Q_corrected)]                      # For wildtype keep original Qscore
+      df <- df %>%
+        mutate(Qsym_corrected=plyr::mapvalues(Q_corrected, from = ascii$Q, to=as.character(ascii$Symbol), warn_missing = F))  # Qscore to symbols
+
+
+      #Write sequence into outFile
+      cat("@",names_sequences[i],          "\n", sep="", file = outFile, append = T)
+      cat(as.character(df$nucleotide),     "\n", sep="", file = outFile, append = T)
+      cat("+\n",                                         file = outFile, append = T)
+      cat(as.character(df$Qsym_corrected), "\n", sep="", file = outFile, append = T)
+    }
   }
 }
 
@@ -555,10 +566,10 @@ LRminion_evaluate_model <- function(filename_to_evaluate,filename_wildtype, LAST
     evaluate_fits(inFile_prefix = filename_F, data_fits = fitsF, reference_sequence = reference_sequence,ascii=ascii)
     evaluate_fits(inFile_prefix = filename_R, data_fits = fitsR, reference_sequence = reference_sequence,ascii=ascii)
 
-    if(verbose){cat("\t Storing data into folders \n")}
-    SplitSequencesInFiles(filename_F,reference_sequence)
-    SplitSequencesInFiles(filename_R,reference_sequence)
-
+    if(verbose){cat("\t Save results \n")}
+    SplitSequencesInFastq(filename_sufix,type = "corrected")
+    SplitSequencesInFastq(filename_sufix,type = "raw")
+    SplitSequencesInFastq(filename_sufix,type = "naive")
 
   }
 
@@ -568,6 +579,39 @@ LRminion_evaluate_model <- function(filename_to_evaluate,filename_wildtype, LAST
 
 ## Other functions
 ####################################################
+# Load fastq files
+read_fastq <- function(fastq_file){
+  data       <- readLines(fastq_file)
+  n          <- length(data)
+  seqs_lines <- seq(2,n, by=4)
+  Q_lines    <- seq(4,n, by=4)
+  id_lines   <- seq(1,n,by=4)
+
+  sequences <- do.call(rbind,strsplit(data[seqs_lines], split=""))
+  Qscores   <- do.call(rbind,strsplit(data[Q_lines], split=""))
+  id <- sapply(data[id_lines], sub, pattern="@", replacement="")
+  names(id)<- NULL
+
+  return(list(sequence_id=id,sequences=sequences,Qscores=Qscores))
+}
+read_combine_fastq <- function(fastq_files, set_identifier=NULL){
+  for(i in seq_along(fastq_files)){
+    if(i==1){
+      list_output <- read_fastq(fastq_files[i])
+      if(!is.null(set_identifier)){set_id = rep(set_identifier[i],length(list_output$sequence_id))}
+    }else{
+      aux_list    <- read_fastq(fastq_files[i])
+      list_output[2:3] <- Map(rbind, list_output[2:3],aux_list[2:3])
+      list_output[1] <- Map(c, list_output[1],aux_list[1])
+
+      if(!is.null(set_identifier)){set_id = c(set_id,  rep(set_identifier[i],length(aux_list$sequence_id))  )}
+    }
+  }
+  if(!is.null(set_identifier)){list_output$set_id = set_id}
+  return(list_output)
+}
+
+
 #Homopolymer functions
 #Detect homopolymer positions in a sequence
 #input: sequence as a vector

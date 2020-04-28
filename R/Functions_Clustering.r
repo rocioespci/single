@@ -56,53 +56,47 @@ dist_equal                 <- function(seq_1,seq_2,ref, w_1, w_2, cut_off=0.9){
   return(distance_value)
 }
 
-modified_hamming_distance_matrix <- function(filename_to_evaluate, reference_sequence, weighting="priors",
-                                             dist_function="dist_modified_hamming", cut_off=0.9,
+
+
+modified_hamming_distance_matrix <- function(filename_to_evaluate, reference_sequence,dist_function="dist_modified_hamming", cut_off=0.9,
                                              filename_out=NULL,filename_ids=NULL){
+
   if(!is.null(filename_ids) & length(filename_to_evaluate)!=length(filename_ids)){stop('Length filename_to_evaluate must be the same as filename_ids')}
 
-  data <- lapply(filename_to_evaluate, load_sequences_from_path)
-  if(!is.null(filename_ids)){
-    ids_repetitions <- sapply(data, length)
-    ids <- rep(filename_ids, ids_repetitions)
-  }
+  data    <- read_combine_fastq(filename_to_evaluate, set_identifier = filename_ids)
+  n_sequences     <- length(data$sequence_id)
 
-  data      <- unlist(data, recursive=FALSE)
-  sequences <- t(sapply(data, function(x){x$nucleotide}))
+  weights <- plyr::mapvalues(data$Qscores, from=ascii$Symbol, to=ascii$P)
+  weights <- 1-apply(weights, 2,as.numeric)
 
-  if(weighting=="raw"){       weights   <- t(sapply(data, function(x){1-x$p_error_minION}))      }
-  if(weighting=="naive"){     weights   <- t(sapply(data, function(x){x$p_right_null_model}))    }
-  if(weighting=="priors"){    weights   <- t(sapply(data, function(x){x$p_right_priors_model}))  }
-
-  n_sequences     <- length(data)
   distance_matrix <- matrix(ncol=n_sequences, nrow=n_sequences)
 
   if(dist_function=="dist_modified_hamming"){
     for(s1 in 1:(n_sequences-1)){    for(s2 in (s1+1):n_sequences){
-        distance_matrix[s1,s2] <- dist_modified_hamming(sequences[s1,],sequences[s2,], reference_sequence, weights[s1,],weights[s2,])
+      distance_matrix[s1,s2] <- dist_modified_hamming(data$sequences[s1,],data$sequences[s2,], reference_sequence, weights[s1,],weights[s2,])
     }  }
   }
   if(dist_function=="dist_modified_hamming_soft"){
     for(s1 in 1:(n_sequences-1)){    for(s2 in (s1+1):n_sequences){
-      distance_matrix[s1,s2] <- dist_modified_hamming_soft(sequences[s1,],sequences[s2,], reference_sequence, weights[s1,],weights[s2,],cut_off = cut_off)
+      distance_matrix[s1,s2] <- dist_modified_hamming_soft(data$sequences[s1,],data$sequences[s2,], reference_sequence, weights[s1,],weights[s2,],cut_off = cut_off)
     }  }
   }
   if(dist_function=="dist_different_minus_equal"){
     for(s1 in 1:(n_sequences-1)){    for(s2 in (s1+1):n_sequences){
-      distance_matrix[s1,s2] <- dist_different_minus_equal(sequences[s1,],sequences[s2,], reference_sequence)
+      distance_matrix[s1,s2] <- dist_different_minus_equal(data$sequences[s1,],data$sequences[s2,], reference_sequence)
     }  }
   }
   if(dist_function=="dist_equal"){
     for(s1 in 1:(n_sequences-1)){    for(s2 in (s1+1):n_sequences){
-      distance_matrix[s1,s2] <- dist_equal(sequences[s1,],sequences[s2,], reference_sequence, weights[s1,],weights[s2,], cut_off = cut_off)
+      distance_matrix[s1,s2] <- dist_equal(data$sequences[s1,],data$sequences[s2,], reference_sequence, weights[s1,],weights[s2,], cut_off = cut_off)
     }  }
   }
 
-  matrix_names <- unlist(sapply(filename_to_evaluate, dir))
-  distance_matrix <- accomodate_dist(x = distance_matrix, matrix_names)
+  distance_matrix <- accomodate_dist(x = distance_matrix,paste(data$set_id,data$sequence_id,sep="*"))
   if(!is.null(filename_out)){  write.table(distance_matrix, file = filename_out)  }
   return(distance_matrix)
 }
+
 
 #GENERAL FUNCTIONS
 accomodate_dist <- function(x, names=NULL){
@@ -283,26 +277,50 @@ blue     <- rgb(0,0,250, maxColorValue = 255)
 
 
 # ######## FUNCTIONS QUE QUIZAS HALLA QUE TIRAR ###########
-# plot_nmut_vs_nseq           <- function(data, bc_id, id, known_muts){
-#   g <- ggplot(data %>% filter(bc==bc_id), aes(x=nseq))+
-#     ggtitle(name_title[id])+
-#     scale_x_continuous(breaks=seq(0,100,by=10))+
-#     scale_y_continuous(breaks=seq(10,100,by=10))+
-#     theme_bw()+ylab("Number of mutations")+xlab("Number of sequences")+
-#     geom_hline(aes(yintercept=0), linetype=3) +
-#     geom_point(aes(y=mean_minION)) +  geom_line(aes(y=mean_minION)) +
-#     geom_errorbar(aes(ymin=mean_minION-sd_minION/2, ymax=mean_minION+sd_minION/2),width=0.5)+
-#     geom_point(aes(y=mean_corrected), col=2) +  geom_line(aes(y=mean_corrected), col=2) +
-#     geom_errorbar(aes(ymin=mean_corrected-sd_corrected/2, ymax=mean_corrected+sd_corrected/2), col=2,width=0.5)
-#   return(g)
+# modified_hamming_distance_matrix <- function(filename_to_evaluate, reference_sequence, weighting="priors",
+#                                              dist_function="dist_modified_hamming", cut_off=0.9,
+#                                              filename_out=NULL,filename_ids=NULL){
+#   if(!is.null(filename_ids) & length(filename_to_evaluate)!=length(filename_ids)){stop('Length filename_to_evaluate must be the same as filename_ids')}
+#
+#   data <- lapply(filename_to_evaluate, load_sequences_from_path)
+#   if(!is.null(filename_ids)){
+#     ids_repetitions <- sapply(data, length)
+#     ids <- rep(filename_ids, ids_repetitions)
+#   }
+#
+#   data      <- unlist(data, recursive=FALSE)
+#   sequences <- t(sapply(data, function(x){x$nucleotide}))
+#
+#   if(weighting=="raw"){       weights   <- t(sapply(data, function(x){1-x$p_error_minION}))      }
+#   if(weighting=="naive"){     weights   <- t(sapply(data, function(x){x$p_right_null_model}))    }
+#   if(weighting=="priors"){    weights   <- t(sapply(data, function(x){x$p_right_priors_model}))  }
+#
+#   n_sequences     <- length(data)
+#   distance_matrix <- matrix(ncol=n_sequences, nrow=n_sequences)
+#
+#   if(dist_function=="dist_modified_hamming"){
+#     for(s1 in 1:(n_sequences-1)){    for(s2 in (s1+1):n_sequences){
+#         distance_matrix[s1,s2] <- dist_modified_hamming(sequences[s1,],sequences[s2,], reference_sequence, weights[s1,],weights[s2,])
+#     }  }
+#   }
+#   if(dist_function=="dist_modified_hamming_soft"){
+#     for(s1 in 1:(n_sequences-1)){    for(s2 in (s1+1):n_sequences){
+#       distance_matrix[s1,s2] <- dist_modified_hamming_soft(sequences[s1,],sequences[s2,], reference_sequence, weights[s1,],weights[s2,],cut_off = cut_off)
+#     }  }
+#   }
+#   if(dist_function=="dist_different_minus_equal"){
+#     for(s1 in 1:(n_sequences-1)){    for(s2 in (s1+1):n_sequences){
+#       distance_matrix[s1,s2] <- dist_different_minus_equal(sequences[s1,],sequences[s2,], reference_sequence)
+#     }  }
+#   }
+#   if(dist_function=="dist_equal"){
+#     for(s1 in 1:(n_sequences-1)){    for(s2 in (s1+1):n_sequences){
+#       distance_matrix[s1,s2] <- dist_equal(sequences[s1,],sequences[s2,], reference_sequence, weights[s1,],weights[s2,], cut_off = cut_off)
+#     }  }
+#   }
+#
+#   matrix_names <- unlist(sapply(filename_to_evaluate, dir))
+#   distance_matrix <- accomodate_dist(x = distance_matrix, matrix_names)
+#   if(!is.null(filename_out)){  write.table(distance_matrix, file = filename_out)  }
+#   return(distance_matrix)
 # }
-# plot_exactconsensus_vs_nseq <- function(data, bc_id, id){
-#   g <-   ggplot(data %>% filter(bc==bc_id), aes(x=nseq)) +
-#     theme_bw()+ylab("Number of correct sequences")+xlab("Number of sequences")+
-#     ggtitle(name_title[id])+
-#     geom_point(aes(y=right_minION)) +  geom_line(aes(y=right_minION)) +
-#     geom_point(aes(y=right_corrected), col=2) +  geom_line(aes(y=right_corrected), col=2) #+
-#   #ylim(c(0,100))
-#   return(g)
-# }
-
