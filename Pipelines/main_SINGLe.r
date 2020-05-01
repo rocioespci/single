@@ -21,7 +21,7 @@
 #    mean.n.mut the mean number of mutations indtroduced. This depends on your experimental characteristics.
 
 #################### INPUTS ####################
-require(minIONLogRegFull)
+require(single)
 
 working_path         =  "/home/robotspm/Documents/Rocio/LRminION2020/RawData" #system.file(package = "minIONLogRegFull") #filename/character
 filename_wildtype    =  "barcode01.maf" #filename/character
