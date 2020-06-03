@@ -25,7 +25,7 @@ data_all$weights             <- plyr::mapvalues(data_all$Qscores, from=ascii$Sym
 data_all$weights             <- 1-apply(data_all$weights, 2,as.numeric)
 rownames(data_all$sequences) <- rownames(data_all$Qscores) <- rownames(data_all$weights)<- data_all$sequence_id
 
-ref_seq                      <- strsplit(KT_wildtype, "")[[1]]
+ref_seq                      <- strsplit(reference_sequence, "")[[1]]
 homopolymer_positions_all    <- detect_homopolymer_positions(ref_seq)
 homopolymer_positions        <- homopolymer_positions_all[sapply(homopolymer_positions_all, length)>1]
 
