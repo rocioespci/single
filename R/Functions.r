@@ -518,11 +518,11 @@ LRminion_train_model    <- function(filename_wildtype, LAST_reference_label, len
 
   if(verbose){cat("\t Calculating p_prior-right\n")}
   ## Load/calculate information of priors probabilities
-  prior_mutation <- calculate_prior_mutations(rates.matrix = mutationratePCR, mean.n.mut = mean.n.mut, wildtype_sequence = reference_sequence[ORF_ini:ORF_end], save = T)
+  prior_mutation <- calculate_prior_mutations(rates.matrix = mutationratePCR, mean.n.mut = mean.n.mut, wildtype_sequence = reference_sequence, save = T)
 
   #Fit wt
-  fit_logistic_regression(filename_wt_F, reference_sequence=reference_sequence[ORF_ini:ORF_end], prior_error = priors_errors_F, prior_mutation = prior_mutation)
-  fit_logistic_regression(filename_wt_R, reference_sequence=reference_sequence[ORF_ini:ORF_end], prior_error = priors_errors_R, prior_mutation = prior_mutation)
+  fit_logistic_regression(filename_wt_F, reference_sequence=reference_sequence, prior_error = priors_errors_F, prior_mutation = prior_mutation)
+  fit_logistic_regression(filename_wt_R, reference_sequence=reference_sequence, prior_error = priors_errors_R, prior_mutation = prior_mutation)
 
   return(0)
 
@@ -563,8 +563,8 @@ LRminion_evaluate_model <- function(filename_to_evaluate,filename_wildtype, LAST
     count_nucleotides_per_qscore(filename_R)
 
     if(verbose){cat("\t Evaluating fits \n")}
-    evaluate_fits(inFile_prefix = filename_F, data_fits = fitsF, reference_sequence = reference_sequence[ORF_ini:ORF_end],ascii=ascii)
-    evaluate_fits(inFile_prefix = filename_R, data_fits = fitsR, reference_sequence = reference_sequence[ORF_ini:ORF_end],ascii=ascii)
+    evaluate_fits(inFile_prefix = filename_F, data_fits = fitsF, reference_sequence = reference_sequence,ascii=ascii)
+    evaluate_fits(inFile_prefix = filename_R, data_fits = fitsR, reference_sequence = reference_sequence,ascii=ascii)
 
     if(verbose){cat("\t Save results \n")}
     SplitSequencesInFastq(filename_sufix,type = "corrected")
