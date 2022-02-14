@@ -8,7 +8,7 @@
 #' @examples
 #' detect_mutations(c("A","A","A","A"),c("B","A","B","A"))
 detect_mutations <- function(sequence,reference){
-      ind <- which(sequence != reference)
-      muts <- paste0(reference[ind],ind,sequence[ind])
-      return(muts)
+    ind <- which(sequence != reference)
+    muts <- paste0(reference[ind],ind,sequence[ind])
+    return(muts)
 }

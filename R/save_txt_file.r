@@ -2,9 +2,9 @@
 #'
 #' This is an auxiliary function in single package. It saves the results of the evaluation in a txt file.
 #' @param input_sam_file File containing the counts per position returned by samtools mpileup
-#' @param aux_fitted_file File containing the results of the SINGLE model. It will be saved when you run single_train_model.
+#' @param single_fits Results of the SINGLE model as returned by single_train(). It can be either the output data.frame or the saved file.
 #' @param output_txt_file String. Prefix for output files
-#' @param reference_sequence Reference sequence: vector of characters, as returned by load_reference_sequence
+#' @param ref_seq Reference sequence: vector of characters, as returned by load_ref_seq
 #' @param pos_start Numeric. Position to start analyzing, counting starts from 1 and it refers to reference used for minimap2 alignment.
 #' @param pos_end  Numeric. Position to stop analyzing, counting starts from 1 and it refers to reference used for minimap2 alignment.
 #' @param comment.char Character used to indicate comments in the input_sam_file
@@ -16,18 +16,24 @@
 #' @importFrom stats setNames
 #' @export save_txt_file
 #' @return Writes txt file
-save_txt_file <- function(input_sam_file, aux_fitted_file,output_txt_file,reference_sequence,
-                          pos_start=NULL, pos_end=NULL,comment.char = "@",gaps_weights,remove.first.reverse=FALSE){
+save_txt_file <- function(input_sam_file, single_fits,output_txt_file,ref_seq,
+                    pos_start=NULL, pos_end=NULL,comment.char = "@",gaps_weights,remove.first.reverse=FALSE){
     #Verify inputs
     if(is.null(pos_start)){pos_start=1;warning("save_txt_file: pos_start set to 1")}
-    if(is.null(pos_end)){pos_end=length(reference_sequence);
-    warning("save_txt_file: pos_end set to legth(referece_sequence)+pos_start (",length(reference_sequence)+pos_start,")\n")}
+    if(is.null(pos_end)){pos_end=length(ref_seq);
+    warning("save_txt_file: pos_end set to legth(referece_sequence)+pos_start (",length(ref_seq)+pos_start,")\n")}
     if(!file.exists(input_sam_file)){stop("save_txt_file: file ", input_sam_file," does not exist")}
-    if(!file.exists(aux_fitted_file)){stop("save_txt_file: file ", aux_fitted_file," does not exist")}
     if(file.exists(output_txt_file)){warning("save_txt_file: overwritting ", output_txt_file,"\n"); file.remove(output_txt_file)}
 
     # Load data and define general parameters
-    qtable = utils::read.table(aux_fitted_file, header=TRUE)
+    if(is.character(single_fits)){
+        if(!file.exists(single_fits)){
+            stop("save_txt_file: file ", single_fits," does not exist")
+        }
+        qtable = utils::read.table(single_fits, header=TRUE)
+    }else{
+        qtable = single_fits
+    }
     cigar_reference_counts   <- c("M","D","N","=","X")
     cigar_query_counts <- c("M","I","S","=","X")
 
@@ -106,7 +112,7 @@ save_txt_file <- function(input_sam_file, aux_fitted_file,output_txt_file,refere
 
         #Positions according to reference and reference seq
         data_seq$position <- data_seq$pos_in_samalig- pos_start + 1  #position - according to single reference
-        data_seq$wt_seq[!is.na(data_seq$position)]   <- reference_sequence[data_seq$position[!is.na(data_seq$position)]]
+        data_seq$wt_seq[!is.na(data_seq$position)]   <- ref_seq[data_seq$position[!is.na(data_seq$position)]]
 
         #4. Read is shorter than reference. Add rows.
         # Ref   *********
@@ -114,15 +120,18 @@ save_txt_file <- function(input_sam_file, aux_fitted_file,output_txt_file,refere
         pos_one <- data_seq$position[1]-1
         if(pos_one>0){
             data_aux <-  data.frame(cigar="D",nucleotide="-",
-                                  qscore=NA,quality=NA,pos_in_samalig=NA,position=seq_len(pos_one),wt_seq=reference_sequence[seq_len(pos_one)])
+                                    qscore=NA,quality=NA,pos_in_samalig=NA,
+                                    position=seq_len(pos_one),
+                                    wt_seq=ref_seq[seq_len(pos_one)])
             data_seq <- rbind(data_aux,data_seq)
         }
         pos_last <- data_seq$position[nrow(data_seq)]
-        total_pos <- length(reference_sequence)
+        total_pos <- length(ref_seq)
         if(pos_last < total_pos){
-            data_aux <-  data.frame(cigar="D",nucleotide=NA, qscore=NA,quality=NA,pos_in_samalig=NA,
-                                  position=(pos_last+1):total_pos,
-                                  wt_seq=reference_sequence[(pos_last+1):total_pos])
+            data_aux <-  data.frame(cigar="D",nucleotide=NA,
+                                    qscore=NA,quality=NA,pos_in_samalig=NA,
+                                    position=(pos_last+1):total_pos,
+                                    wt_seq=ref_seq[(pos_last+1):total_pos])
             data_seq <- rbind(data_seq,data_aux)
         }
 
@@ -138,17 +147,17 @@ save_txt_file <- function(input_sam_file, aux_fitted_file,output_txt_file,refere
         #If they are at the beginning, I replace by the first Qscore
         if(length(del_positions)>0){
             if(del_positions[1]==1){
-            n = length(del_positions)
-            if(n==1){
-                data_seq$quality[1] <- data_seq$quality[2]
-                del_positions <- del_positions[-1]
-            }else{
-                ind_dif <- which(del_positions[seq(2,n)] != del_positions[seq_len(n-1)]+1)[1]
-                if(is.na(ind_dif)) {ind_dif <- n}
-                data_seq$quality[seq_len(ind_dif)] <- data_seq$quality[ind_dif+1]
-                del_positions <- del_positions[-seq_len(ind_dif)]
+                n = length(del_positions)
+                if(n==1){
+                    data_seq$quality[1] <- data_seq$quality[2]
+                    del_positions <- del_positions[-1]
+                }else{
+                    ind_dif <- which(del_positions[seq(2,n)] != del_positions[seq_len(n-1)]+1)[1]
+                    if(is.na(ind_dif)) {ind_dif <- n}
+                    data_seq$quality[seq_len(ind_dif)] <- data_seq$quality[ind_dif+1]
+                    del_positions <- del_positions[-seq_len(ind_dif)]
+                }
             }
-          }
         }
 
         #If they are at the end, I replace by the last Qscore
@@ -199,10 +208,10 @@ save_txt_file <- function(input_sam_file, aux_fitted_file,output_txt_file,refere
                     #Mean of probabilities
                     aux.qual       <- data_seq$quality[c(j-nstart, j+nend)]
                     if(gaps_weights=='mean'){
-                       mean.qscore    <- round(mean(aux.qual))
+                        mean.qscore    <- round(mean(aux.qual))
                     }
                     if(gaps_weights=='minimum'){
-                       mean.qscore    <- min(aux.qual)
+                        mean.qscore    <- min(aux.qual)
                     }
                     data_seq$quality[j] <- mean.qscore
                 }

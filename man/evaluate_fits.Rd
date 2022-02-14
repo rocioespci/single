@@ -9,8 +9,9 @@ evaluate_fits(
   q_range,
   output_file,
   data_fits,
-  reference_sequence,
-  verbose = TRUE
+  ref_seq,
+  verbose = TRUE,
+  save = TRUE
 )
 }
 \arguments{
@@ -20,11 +21,13 @@ evaluate_fits(
 
 \item{output_file}{File name for output, if save=TRUE.}
 
-\item{data_fits}{Data.frame with columns position nucleotide slope intercept as the one returned by fit_logistic_regression.}
+\item{data_fits}{Data.frame with columns position nucleotide slope intercept as the one returned by fit_logregr}
 
-\item{reference_sequence}{Reference sequence: vector of characters, as returned by load_reference_sequence}
+\item{ref_seq}{Reference sequence: vector of characters, as returned by load_ref_seq}
 
 \item{verbose}{Logical.}
+
+\item{save}{Logical. Should results be saved in output_file?}
 }
 \value{
 data.frame with SINGLE fits evaluated for pos_range and q_range. Columns are: position, nucleotide, quality, p_right_priors_model, isWT.
@@ -33,15 +36,12 @@ data.frame with SINGLE fits evaluated for pos_range and q_range. Columns are: po
 Evaluates single fits for all positions, nucleotides and Qscores in the given ranges.
 }
 \examples{
-pos_range = seq_len(10)
-q_range = seq(10,30)
+pos_range = seq_len(100)
+q_range = seq(1,50)
 ref_seq_file = system.file("extdata", "ref_seq.fasta", package = "single")
-ref_seq = load_reference_sequence(ref_seq_file)
-counts_pnq_file = system.file("extdata", "example_train_countsPNQ_sub.txt", package = "single")
-counts_pnq = read.table(counts_pnq_file, header=TRUE)
-prior_error = calculate_prior_errors(counts_pnq,reference_sequence=ref_seq)
-prior_mutation = calculate_prior_mutations(mutation_rate, 3, ref_seq)
-fits = fit_logistic_regression(counts_pnq, ref_seq,prior_error,prior_mutation)
-outfile_ex = tempfile("evaluate_fits_example.txt")
-evaluate_fits(pos_range,q_range,outfile_ex, fits,ref_seq, verbose=FALSE)
+ref_seq = load_ref_seq(ref_seq_file)
+fits_file = system.file("extdata", "single_fits_ex.txt", package = "single")
+fits = read.table(fits_file, header=TRUE)
+outfile = tempfile("evaluate_fits_example", fileext=".txt")
+evaluate_fits(pos_range,q_range,outfile,fits,ref_seq,verbose=FALSE,save=FALSE)
 }

@@ -14,6 +14,100 @@ knitr::opts_chunk$set(
 )
 ```
 
+
+SINGLe computes consensus sequence of DNA reads by (noisy) nanopore sequencing. It is focused on long amplicons sequencing, and it aims to the reads of gene libraries, typically used in directed evolution experiments.
+
+Nanopore sequencing makes systematic mistakes. SINGLe takes advantage that gene libraries are created from an original wild type or reference sequence, and it characterises the errors made by nanopore sequencing when reading several strands of this same sequence. Then, uses that information to correct the confidence values assigned to each nucleotide read in the mutants library. 
+
+Finally, given that you can identify which variant was read in each case (for example by the use of unique molecular identifiers or DNA barcodes), SINGLe groups them and computes the consensus sequence by weighting the frequencies with the corrected confidence values. 
+
+To see how this is adventageous, and for more details, please refer to the publication "Accurate gene consensus at low nanopore coverage" for more information.
+
+## Before starting
+
+To use SINGLe you must have the following data:
+
+- A fasta file with the reference sequence (ex. a wild type from which you generated the library) (__REF.fasta__).
+- Nanopore reads of a reference sequence (__REF_READS.fastq__).
+- Nanopore reads of a gene libraries (__LIB_READS.fastq__).
+- Identification of each read in the gene library with a gene variant (ex via the use of DNA barcodes on your experiment) (__BC_TABLE.txt__).
+
+
+## Preprocessing
+
+Align nanopore reads of the reference sequence to the reference sequence 
+```{bash, eval=F}
+minimap2 -ax map-ont --sam-hit-only  REF.fasta REF_READS.fastq >REF_READS.sam
+```
+
+
+And count nucleotides in each position using samtools:
+```{bash,eval=F}
+samtools view -S -b REF_READS.sam > REF_READS.bam
+samtools sort REF_READS.bam -o REF_READS.sorted.bam
+samtools mpileup -Q 0 REF_READS.sorted.bam > REF_READS_PNQ.txt
+```
+
+Align nanopore reads of the gene library to the reference sequence 
+```{bash, eval=F}
+minimap2 -ax map-ont --sam-hit-only  REF.fasta LIB_READS.fastq >LIB_READS.sam
+```
+
+
+## Run SINGLe in R
 ```{r setup}
 library(single)
 ```
+
+SINGLe consists on three steps.
+
+SINGLe can be time consuming, so I will just analyze a sub set of positions
+```{r}
+pos_start=1
+pos_end = 100
+```
+
+
+
+First, use reference reads to make a model. Here I use the examples included in the package. 
+```{r}
+file_ref_pnq = system.file("extdata", "REF_READS_PNQ.txt", package = "single")
+refseq_file = system.file("extdata", "ref_seq.fasta", package = "single")
+outfile_ex = "example"
+fits_table <- single_train(file_ref_pnq,outfile_ex,refseq_file,
+                           mutation_rate,5,pos_start,pos_end, verbose = FALSE)
+print(head(fits_table))
+```
+
+
+Second, use the fitted model to evaluate the reads of your library, and re-weight the Qscores
+
+```{r}
+# LIB_READS.sam
+input_sam_file = system.file("extdata", "LIB_READS.sam", package = "single")
+reads_single_fit = "single_reads_ex"#tempfile("example")
+single_evaluate(input_sam_file,fits_table,reads_single_fit,refseq_file,
+                pos_start=pos_start,pos_end=pos_end, verbose=TRUE,
+                gaps_weights = "minimum")
+```
+
+Finally, you can use the reads of the library with the re-weighted scores to compute consensus sequences in subsets of reads, indicated in __BC_TABLE.txt__.
+
+```{r}
+barcodes_file = system.file("extdata", "BC_TABLE.txt", package = "single")
+single_corrected_seqs = paste0(reads_single_fit,"_corrected.txt")
+single_consensus_byBarcode(barcodes_file,refseq_file,
+                           single_corrected_seqs,
+                           verbose = FALSE,
+                           file_out_consensus = "")
+
+
+```
+
+
+
+
+
+
+
+

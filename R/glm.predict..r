@@ -11,6 +11,6 @@
 #' y = glm.predict.(x,1,2)
 #' plot(x,y)
 glm.predict. <- function(x,slope,intercept){
-      y <- 1/(1+exp( -( slope*x + intercept ) ))
-      return(y)
+    y <- 1/(1+exp( -( slope*x + intercept ) ))
+    return(y)
 }

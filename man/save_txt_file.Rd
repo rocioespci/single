@@ -6,9 +6,9 @@
 \usage{
 save_txt_file(
   input_sam_file,
-  aux_fitted_file,
+  single_fits,
   output_txt_file,
-  reference_sequence,
+  ref_seq,
   pos_start = NULL,
   pos_end = NULL,
   comment.char = "@",
@@ -19,11 +19,11 @@ save_txt_file(
 \arguments{
 \item{input_sam_file}{File containing the counts per position returned by samtools mpileup}
 
-\item{aux_fitted_file}{File containing the results of the SINGLE model. It will be saved when you run single_train_model.}
+\item{single_fits}{Results of the SINGLE model as returned by single_train(). It can be either the output data.frame or the saved file.}
 
 \item{output_txt_file}{String. Prefix for output files}
 
-\item{reference_sequence}{Reference sequence: vector of characters, as returned by load_reference_sequence}
+\item{ref_seq}{Reference sequence: vector of characters, as returned by load_ref_seq}
 
 \item{pos_start}{Numeric. Position to start analyzing, counting starts from 1 and it refers to reference used for minimap2 alignment.}
 

@@ -10,17 +10,17 @@
 #' @importFrom stringr str_locate_all
 #' @importFrom rlang .data
 #' @importFrom utils write.table
-#' @export parse_nucleotides_per_qscore
+#' @export parse_countspnq
 #' @examples
-#' input_file = system.file("extdata", "example_train_countsPNQ.txt", package = "single")
-#' parse_nucleotides_per_qscore(input_file=input_file,output_file=NA, pos_start=1,pos_end=10)
-parse_nucleotides_per_qscore   <- function(input_file,output_file, pos_start=NULL,pos_end=NULL, save=FALSE){
+#' file_ref_pnq = system.file("extdata", "REF_READS_PNQ.txt", package = "single")
+#' parse_countspnq(input_file=file_ref_pnq,output_file=NA, pos_end=10)
+parse_countspnq   <- function(input_file,output_file, pos_start=NULL,pos_end=NULL, save=FALSE){
     # Load data
     data_input <- readLines(input_file)
     data_input <- strsplit(data_input, split="\t")
     data_input <- do.call(rbind,data_input)
     data_input <- as.data.frame(data_input, stringsAsFactors = FALSE)
-    if(ncol(data_input)!=6){stop('count_nucleotides_per_score: input_file does not have the correct size: it should have 6 columns.')}
+    if(ncol(data_input)!=6){stop('parse_countspnq: input_file does not have the correct size: it should have 6 columns.')}
     # Make a nice dataframe
     data_input <- data_input %>%
         dplyr::rename(ref_seq_id = .data$V1, position=.data$V2,ref_base = .data$V3,n_reads=.data$V4,bases=.data$V5,qscores=.data$V6) %>%
@@ -96,8 +96,8 @@ parse_nucleotides_per_qscore   <- function(input_file,output_file, pos_start=NUL
             df_final <-  df_final %>% rbind(df.counts[,c("position", "nucleotide","quality","counts")])
         }
         if(save){utils::write.table(x=df.counts[,c("position", "nucleotide","quality","counts")],
-                             file=output_file,
-                             append = TRUE, col.names = FALSE,row.names = FALSE)
+                            file=output_file,
+                            append = TRUE, col.names = FALSE,row.names = FALSE)
         }
     }
     return(df_final)

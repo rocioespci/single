@@ -1,12 +1,21 @@
 #' Compute consensus sequence
 #'
-#' This is an auxiliary function in single package. It computes consensus from a data.frame as the one returned by single_evaluate_model()
+#' This is an auxiliary function in single package. It computes consensus from a data.frame as the one returned by single_evaluate()
 #' @param df data.frame with the columns: nucleotide, probability, position
 #' @param cutoff_prob Numeric. Nucleotides with probability below this number will be removed from consensus computation.
 #' @return Character vector, consensus sequence
 #' @importFrom rlang .data
-#' @export compute_consensus_sequence
-compute_consensus_sequence       <- function(df,cutoff_prob=0.2){
+#' @importFrom dplyr %>% select rename
+#' @export consensus_seq
+#' @examples
+#' require(dplyr)
+#' seqs = system.file("extdata", "single_reads_ex_corrected.txt", package="single")
+#' seqs_table= read.table(seqs, header=TRUE,nrows=100*10+1)
+#' seqs_table = seqs_table %>%
+#'     select(nucleotide,p_right_priors_model,position) %>%
+#'     rename(probability=p_right_priors_model)
+#' consensus_seq(seqs_table)
+consensus_seq       <- function(df,cutoff_prob=0.2){
     if(cutoff_prob>1 | cutoff_prob<0){stop('cutoff must be between 0 and 1')}
 
     checksequence <- setdiff(bases,unique(df[,1]))
@@ -39,8 +48,8 @@ compute_consensus_sequence       <- function(df,cutoff_prob=0.2){
     missing.positions <- setdiff(seq_len(max(df$position)), df.counts$position)
     if(length(missing.positions)>0){
         aux_df <- data.frame(position=missing.positions,
-                             nucleotide=factor("N", levels=levels(df.counts$nucleotide)),
-                             counts=0)
+                            nucleotide=factor("N", levels=levels(df.counts$nucleotide)),
+                            counts=0)
         df.counts <- df.counts %>%
             dplyr::bind_rows(aux_df) %>%
             dplyr::arrange(.data$position)
