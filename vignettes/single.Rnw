@@ -1,0 +1,141 @@
+\documentclass{article}
+<<style-Sweave, eval=TRUE, echo=FALSE, results=tex>>=
+BiocStyle::latex()
+@
+
+\bioctitle[SINGLe]{SINGLe - Accurate consensus sequence from nanopore reads of a gene library}
+\author{Rocio ESPADA\thanks{\email{rocio.espada@espci.fr}}\\ ESPCI Paris}
+
+\usepackage{listings}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+ \maketitle
+
+
+
+
+\begin{abstract}
+
+This vignettes shows how to use single, a package to improve consensus calling on nanopore sequencing of gene libraries.
+
+\end{abstract}
+
+\packageVersion{\Sexpr{BiocStyle::pkg_ver("single")}}
+
+
+\tableofcontents
+
+\newpage
+
+\section{Introduction}
+SINGLe computes consensus sequence of DNA reads by (noisy) nanopore sequencing. It is focused on long amplicons sequencing, and it aims to the reads of gene libraries, typically used in directed evolution experiments.
+
+SINGLe takes advantage that gene libraries are created from an original wild type or reference sequence, and it characterizes the systematic errors made by nanopore sequencing. Then, uses that information to correct the confidence values assigned to each nucleotide read in the mutants library.
+
+Finally, given that you can identify which variant was read in each case (for example by the use of unique molecular identifiers or DNA barcodes), SINGLe groups them and computes the consensus sequence by weighting the frequencies with the corrected confidence values.
+
+For more details, please refer to our pre-print "Accurate gene consensus at low nanopore coverage" doi: https://doi.org/10.1101/2020.03.25.007146 for more information.
+
+
+\section{Installation}
+
+Install using devtools:
+<<eval=FALSE>>=
+devtools::install_github("rocioespci/single")
+@
+
+
+\section{How to use}
+
+\subsection{Before starting}
+
+To use SINGLe you must have the following data:
+\begin{itemize}
+\item A fasta file with the reference sequence (ex. a wild type from which you generated the library) (\textbf{REF.fasta}).
+\item Nanopore reads of a reference sequence (\textbf{REF\_READS.fastq}).
+\item Nanopore reads of a gene libraries (\textbf{LIB\_READS.fastq}).
+\item Identification of each read in the gene library with a gene variant (ex via the use of DNA barcodes on your experiment) (\textbf{BC\_TABLE.txt}).
+\end{itemize}
+\subsection{Preprocessing data}
+
+
+Align nanopore reads of the reference sequence to the reference sequence
+
+\begin{lstlisting}
+minimap2 -ax map-ont --sam-hit-only REF.fasta REF_READS.fastq > REF_READS.sam
+\end{lstlisting}
+
+
+And count nucleotides in each position using samtools:
+\begin{lstlisting}
+samtools view -S -b REF_READS.sam > REF_READS.bam
+samtools sort REF_READS.bam -o REF_READS.sorted.bam
+samtools mpileup -Q 0 REF_READS.sorted.bam > REF_READS_PNQ.txt
+\end{lstlisting}
+
+
+
+Align nanopore reads of the gene library to the reference sequence
+\begin{lstlisting}
+minimap2 -ax map-ont --sam-hit-only  REF.fasta LIB_READS.fastq >LIB_READS.sam
+\end{lstlisting}
+
+
+
+\subsection{Run SINGLe in R}
+
+SINGLe consists on three steps: train model, evaluate model, compute consensus. As it can be time consuming, I will only analyze a sub set of positions
+<<>>=
+library(single)
+pos_start=1
+pos_end = 100
+@
+
+Train model: use nanopore reads of the reference (wild type) sequence to make a SINGLe model. Here I use the examples included in the package.
+<<>>=
+file_ref_pnq = system.file("extdata", "REF_READS_PNQ.txt", package = "single")
+refseq_file = system.file("extdata", "ref_seq.fasta", package = "single")
+outfile_ex = "example"
+fits_table <- single_train(file_ref_pnq,outfile_ex,refseq_file,
+                            mutation_rate,5,pos_start,pos_end, verbose = FALSE)
+print(head(fits_table))
+@
+
+
+Evaluate model: use the fitted model to evaluate the reads of your library, and re-weight the Qscores
+<<>>=
+# LIB_READS.sam
+input_sam_file = system.file("extdata", "LIB_READS.sam", package = "single")
+reads_single_fit = "single_reads_ex"#tempfile("example")
+single_evaluate(input_sam_file,fits_table,reads_single_fit,refseq_file,
+                pos_start=pos_start,pos_end=pos_end, verbose=TRUE,
+                gaps_weights = "minimum")
+@
+
+Finally, you can use the reads of the library with the re-weighted scores to compute consensus sequences in subsets of reads, indicated in \textbf{BC\_TABLE.txt}.
+
+<<>>=
+barcodes_file = system.file("extdata", "BC_TABLE.txt", package = "single")
+single_corrected_seqs = paste0(reads_single_fit,"_corrected.txt")
+single_consensus_byBarcode(barcodes_file,refseq_file,
+                           single_corrected_seqs,
+                           verbose = FALSE,
+                           file_out_consensus = "")
+@
+
+
+
+
+<<>>=
+sessionInfo()
+@
+
+
+
+
+
+
+
+
+\end{document}
