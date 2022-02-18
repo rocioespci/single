@@ -3,6 +3,8 @@
 BiocStyle::latex()
 @
 
+%\VignetteIndexEntry{[single]}
+
 \bioctitle[SINGLe]{SINGLe - Accurate consensus sequence from nanopore reads of a gene library}
 \author{Rocio ESPADA\thanks{\email{rocio.espada@espci.fr}}\\ ESPCI Paris}
 
@@ -120,8 +122,7 @@ barcodes_file = system.file("extdata", "BC_TABLE.txt", package = "single")
 single_corrected_seqs = paste0(reads_single_fit,"_corrected.txt")
 single_consensus_byBarcode(barcodes_file,refseq_file,
                            single_corrected_seqs,
-                           verbose = FALSE,
-                           file_out_consensus = "")
+                           verbose = FALSE)
 @
 
 

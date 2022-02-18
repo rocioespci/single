@@ -8,7 +8,6 @@ single_consensus_byBarcode(
   barcodes_file,
   refseq_fasta,
   single_corrected_seqs,
-  file_out_consensus = "",
   column_id = NULL,
   column_barcode = NULL,
   header = TRUE,
@@ -24,8 +23,6 @@ single_consensus_byBarcode(
 
 \item{single_corrected_seqs}{Files containing the sequences corrected by SINGLE, i.e. saved by single_evaluate}
 
-\item{file_out_consensus}{String. File to store results. Default "" prints into standard output connection (see cat)}
-
 \item{column_id, column_barcode}{Numeric. Columns where the sequences id and the barcode (or grouping tag) are, in the barcodes_file}
 
 \item{header, dec, sep}{Arguments for read.table(barcodes_file)}
@@ -33,7 +30,7 @@ single_consensus_byBarcode(
 \item{verbose}{Logical.}
 }
 \value{
-This function returns 0. Results are saved in file_out_consensus
+DNAStringSet with consensus sequences
 }
 \description{
 Main function to compute consensus after correcting reads by a SINGLE model.
@@ -45,5 +42,5 @@ barcodes_file = system.file("extdata", "BC_TABLE.txt", package = "single")
 refseq_file = system.file("extdata", "ref_seq.fasta", package = "single")
 reads_single = system.file("extdata", "single_reads_ex_corrected.txt", package = "single")
 single_consensus_byBarcode(barcodes_file,refseq_file,reads_single,
-                          verbose = FALSE,file_out_consensus = "")
+                          verbose = FALSE)
 }

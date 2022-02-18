@@ -19,6 +19,6 @@ Description: Accurate consensus sequence from nanopore reads of a DNA gene libra
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-Imports: dplyr, reshape2, rlang, stats, stringr, tidyr, utils
+Imports: Biostrings, dplyr, reshape2, rlang, stats, stringr, tidyr, utils
 Suggests: BiocStyle
 RoxygenNote: 7.1.2
