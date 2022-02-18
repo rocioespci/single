@@ -20,8 +20,5 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Imports: dplyr, reshape2, rlang, stats, stringr, tidyr, utils
-VignetteBuilder: knitr
-Suggests: 
-    rmarkdown,
-    knitr
+Suggests: BiocStyle
 RoxygenNote: 7.1.2
