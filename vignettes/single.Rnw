@@ -42,10 +42,6 @@ For more details, please refer to our pre-print "Accurate gene consensus at low 
 
 \section{Installation}
 
-Install using devtools:
-<<eval=FALSE>>=
-devtools::install_github("rocioespci/single")
-@
 
 
 \section{How to use}
