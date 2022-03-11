@@ -1,7 +1,7 @@
 Package: single
 Type: Package
 Title: Accurate consensus sequence from nanopore reads of a gene library
-Version: 0.99.1
+Version: 0.99.2
 Authors@R: 
   c(person(given = "Rocio",
            family = "Espada",
