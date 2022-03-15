@@ -1,7 +1,7 @@
 Package: single
 Type: Package
 Title: Accurate consensus sequence from nanopore reads of a gene library
-Version: 0.99.3
+Version: 0.99.4
 Authors@R: 
   c(person(given = "Rocio",
            family = "Espada",
@@ -10,7 +10,7 @@ Authors@R:
            comment = c(ORCID = "0000-0003-3829-473X")))
 biocViews: Software, Sequencing
 Depends:
-	R (>= 4.0)
+	R (>= 4.1)
 Description: Accurate consensus sequence from nanopore reads of a DNA gene library. 
                 SINGLe corrects for systematic errors in nanopore sequencing reads of
                 gene libraries and it retrieves true consensus sequences of variants
@@ -18,7 +18,7 @@ Description: Accurate consensus sequence from nanopore reads of a DNA gene libra
                 information in preprint doi: https://doi.org/10.1101/2020.03.25.007146.
 License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
-Imports: Biostrings, dplyr, reshape2, rlang, stats, stringr, tidyr, utils
+LazyData: false
+Imports: Biostrings, dplyr, GenomicAlignments,IRanges, reshape2, rlang, Rsamtools, stats, stringr, tidyr, utils
 Suggests: BiocStyle
 RoxygenNote: 7.1.2
