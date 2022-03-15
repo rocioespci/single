@@ -10,8 +10,8 @@ evaluate_fits(
   output_file,
   data_fits,
   ref_seq,
-  verbose = TRUE,
-  save = TRUE
+  verbose = FALSE,
+  save = FALSE
 )
 }
 \arguments{
@@ -30,7 +30,7 @@ evaluate_fits(
 \item{save}{Logical. Should results be saved in output_file?}
 }
 \value{
-data.frame with SINGLE fits evaluated for pos_range and q_range. Columns are: position, nucleotide, quality, p_right_priors_model, isWT.
+data.frame with SINGLE fits evaluated for pos_range and q_range. Columns are: position, nucleotide, quality, p_SINGLe, isWT.
 }
 \description{
 Evaluates single fits for all positions, nucleotides and Qscores in the given ranges.
@@ -39,9 +39,7 @@ Evaluates single fits for all positions, nucleotides and Qscores in the given ra
 pos_range = seq_len(100)
 q_range = seq(1,50)
 ref_seq_file = system.file("extdata", "ref_seq.fasta", package = "single")
-ref_seq = load_ref_seq(ref_seq_file)
-fits_file = system.file("extdata", "single_fits_ex.txt", package = "single")
-fits = read.table(fits_file, header=TRUE)
-outfile = tempfile("evaluate_fits_example", fileext=".txt")
-evaluate_fits(pos_range,q_range,outfile,fits,ref_seq,verbose=FALSE,save=FALSE)
+ref_seq = readDNAStringSet(ref_seq_file)
+evaluated_fits <- evaluate_fits(pos_range = c(1,5),q_range = c(0,10),
+                     data_fits = fits,ref_seq = ref_seqE)
 }

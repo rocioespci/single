@@ -5,7 +5,7 @@
 \title{Train SINGLE model}
 \usage{
 single_train(
-  file_ref_pnq,
+  bamfile,
   output_prefix,
   refseq_fasta,
   rates.matrix = NULL,
@@ -18,7 +18,7 @@ single_train(
 )
 }
 \arguments{
-\item{file_ref_pnq}{File containing the counts per position returned by samtools mpileup}
+\item{bamfile}{File containing the counts per position returned by samtools mpileup}
 
 \item{output_prefix}{String. Prefix for output files}
 
@@ -56,12 +56,17 @@ Before running single_train_function you have to align your INPUT data to a REFE
 \code{samtools mpileup -Q 0 ALIGNMENT.sorted.bam > COUNTS.txt}
 }
 \examples{
-pos_start=1
-pos_end = 10
-file_ref_pnq = system.file("extdata", "REF_READS_PNQ.txt", package = "single")
-refseq_file = system.file("extdata", "ref_seq.fasta", package = "single")
-output_prefix = tempfile()
-fits_table <- single_train(file_ref_pnq,output_prefix,refseq_file,
-                           mutation_rate,5,pos_start,pos_end, verbose = FALSE)
-print(head(fits_table))
+pos_start<-1
+pos_end<- 10
+refseq_fasta<- system.file("extdata", "ref_seq.fasta", package = "single")
+train_reads_example <- system.file("extdata", "train_seqs_500.sorted.bam",
+                                   package = "single")
+train <- single_train(bamfile=train_reads_example,
+                   refseq_fasta=refseq_fasta,
+                   rates.matrix=mutation_rate,
+                   mean.n.mutations=5.4,
+                   pos_start=pos_start,
+                   pos_end=pos_end,
+                   save_final= FALSE)
+print(head(train))
 }

@@ -6,10 +6,9 @@
 \usage{
 single_consensus_byBarcode(
   barcodes_file,
-  refseq_fasta,
   single_corrected_seqs,
-  column_id = NULL,
-  column_barcode = NULL,
+  column_SeqID = NULL,
+  column_BCid = NULL,
   header = TRUE,
   dec = ".",
   sep = " ",
@@ -19,11 +18,9 @@ single_consensus_byBarcode(
 \arguments{
 \item{barcodes_file}{File containing the names of the reads and the barcode associated (or any grouping tag).}
 
-\item{refseq_fasta}{Fasta file containing reference sequence}
-
 \item{single_corrected_seqs}{Files containing the sequences corrected by SINGLE, i.e. saved by single_evaluate}
 
-\item{column_id, column_barcode}{Numeric. Columns where the sequences id and the barcode (or grouping tag) are, in the barcodes_file}
+\item{column_SeqID, column_BCid}{Numeric. Columns where the sequences id and the barcode (or grouping tag) are, in the barcodes_file}
 
 \item{header, dec, sep}{Arguments for read.table(barcodes_file)}
 
@@ -37,10 +34,30 @@ Main function to compute consensus after correcting reads by a SINGLE model.
 }
 \examples{
 pos_start=1
-pos_end = 100
-barcodes_file = system.file("extdata", "BC_TABLE.txt", package = "single")
-refseq_file = system.file("extdata", "ref_seq.fasta", package = "single")
-reads_single = system.file("extdata", "single_reads_ex_corrected.txt", package = "single")
-single_consensus_byBarcode(barcodes_file,refseq_file,reads_single,
-                          verbose = FALSE)
+pos_end = 10
+refseq_fasta = system.file("extdata", "ref_seq.fasta", package = "single")
+ref_seq <- subseq(readDNAStringSet(refseq_fasta), pos_start,pos_end)
+train_reads_example <- system.file("extdata", "train_seqs_500.sorted.bam",
+                                   package = "single")
+train <- single_train(bamfile=train_reads_example,
+                   refseq_fasta=refseq_fasta,
+                   rates.matrix=mutation_rate,
+                   mean.n.mutations=5.4,
+                   pos_start=pos_start,
+                   pos_end=pos_end,
+                   save_final= FALSE)
+test_reads_example = system.file("extdata", "test_sequences.sorted.bam",
+   package = "single")
+corrected_reads <- single_evaluate(bamfile = test_reads_example,
+                 single_fits = train,
+                 ref_seq = ref_seq,
+                 pos_start=pos_start,
+                 pos_end=pos_end,
+                 gaps_weights = "minimum")
+barcodes_table_example = system.file("extdata", "Barcodes_table.txt",
+   package = "single")
+consensus <- single_consensus_byBarcode(
+                 barcodes_file = barcodes_table_example,
+                 single_corrected_seqs = corrected_reads,
+                 verbose = FALSE)
 }

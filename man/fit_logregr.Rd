@@ -7,8 +7,8 @@
 fit_logregr(
   counts_pnq,
   ref_seq,
-  prior_error,
-  prior_mutation,
+  p_prior_errors,
+  p_prior_mutations,
   save = FALSE,
   output_file_fits,
   output_file_data,
@@ -16,13 +16,13 @@ fit_logregr(
 )
 }
 \arguments{
-\item{counts_pnq}{Data frame with columns position nucleoide quality counts, as returned by parse_countspnq}
+\item{counts_pnq}{Data frame with columns position nucleoide quality counts, as returned by pileup_by_QUAL}
 
 \item{ref_seq}{Reference sequence: vector of characters, as returned by load_ref_seq}
 
-\item{prior_error}{Data frame with columns position nucleotide prior.error, as the one returned by prior_errors().}
+\item{p_prior_errors}{Data frame with columns position nucleotide prior.error, as the one returned by p_prior_errors().}
 
-\item{prior_mutation}{Data frame with columns wt.base, nucleotide and p_mutation (probaility of mutation), as the one returned by prior_mutations().}
+\item{p_prior_mutations}{Data frame with columns wt.base, nucleotide and p_mutation (probaility of mutation), as the one returned by p_prior_mutations().}
 
 \item{save}{Logical. Should data be saved in a output_file?}
 
@@ -37,4 +37,20 @@ data.frame with columns position, nucleotide, slope and intercept (of the sigmoi
 }
 \description{
 This is an auxiliary function in single package. It takes counts_pnq and for each position and nucleotide it fits SINGLE's logistic regression.
+}
+\examples{
+pos_start <- 1
+pos_end <- 10
+refseq_fasta <- system.file("extdata", "ref_seq.fasta", package = "single")
+train_reads_example <- system.file("extdata", "train_seqs_500.sorted.bam",
+                                   package = "single")
+counts_pnq <- pileup_by_QUAL(bam_file=train_reads_example,
+    pos_start=pos_start,pos_end=pos_end)
+p_prior_mutations <- p_prior_mutations(rates.matrix = mutation_rate,
+    mean.n.mut = 5,ref_seq = ref_seq,save = F)
+p_prior_errors <- p_prior_errors(counts_pnq=counts_pnq,save=FALSE)
+fits <- fit_logregr(counts_pnq = counts_pnq,ref_seq=ref_seq,
+    p_prior_errors = p_prior_errors,p_prior_mutations = p_prior_mutations,
+    save=F)
+head(fits)
 }

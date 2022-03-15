@@ -5,35 +5,38 @@
 \title{Evaluate SINGLE model}
 \usage{
 single_evaluate(
-  input_sam_file,
+  bamfile,
   single_fits,
-  output_prefix,
-  refseq_fasta,
+  ref_seq,
   pos_start = NULL,
   pos_end = NULL,
-  verbose = TRUE,
-  gaps_weights = "none"
+  gaps_weights,
+  save = FALSE,
+  output_file,
+  verbose = FALSE
 )
 }
 \arguments{
-\item{input_sam_file}{File containing the counts per position returned by samtools mpileup}
+\item{bamfile}{File containing the counts per position returned by samtools mpileup}
 
 \item{single_fits}{Results of the SINGLE model as returned by single_train(). It can be either the output data.frame or the saved file.}
 
-\item{output_prefix}{String. Prefix for output files}
-
-\item{refseq_fasta}{Fasta file containing reference sequence}
+\item{ref_seq}{DNAStringSet containing the true reference sequence}
 
 \item{pos_start}{Numeric. Position to start analyzing, counting starts from 1 and it refers to reference used for minimap2 alignment.}
 
 \item{pos_end}{Numeric. Position to stop analyzing, counting starts from 1 and it refers to reference used for minimap2 alignment.}
 
-\item{verbose}{Logical}
-
 \item{gaps_weights}{One of "minimum","none","mean". How to assign qscores to deletions.}
+
+\item{save}{Logical. Should data be saved in a output_file?}
+
+\item{output_file}{File name for output, if save=TRUE.}
+
+\item{verbose}{Logical}
 }
 \value{
-Creates file output_prefix_corrected.txt with the Qscores re-scaled by SINGLE. Columns are SeqID position nucleotide isWT original_quality p_right_priors_model.
+Creates file output_prefix_corrected.txt with the Qscores re-scaled by SINGLE. Columns are SeqID position nucleotide isWT original_quality p_SINGLe
 }
 \description{
 Main function to evaluate a gene library using a SINGLE model.
@@ -50,10 +53,23 @@ Before running single_evaluate_function you have to align your INPUT data to a R
 \code{samtools mpileup -Q 0 ALIGNMENT.sorted.bam > COUNTS.txt}
 }
 \examples{
-input_sam_file = system.file("extdata", "LIB_READS.sam", package = "single")
-single_fits = system.file("extdata", "single_fits_eval_ex.txt", package="single")
-ref_seq_file = system.file("extdata", "ref_seq.fasta", package = "single")
-outfile = tempfile("example")
-single_evaluate(input_sam_file,single_fits,outfile,ref_seq_file,
-    pos_start=1,pos_end=100,verbose=TRUE)
+pos_start<-1
+pos_end <-10
+refseq_fasta <- system.file("extdata", "ref_seq.fasta", package = "single")
+ref_seq <- subseq(readDNAStringSet(refseq_fasta), pos_start,pos_end)
+train_reads_example <- system.file("extdata", "train_seqs_500.sorted.bam",
+                                   package = "single")
+train <- single_train(bamfile=train_reads_example,
+                   refseq_fasta=refseq_fasta,
+                   rates.matrix=mutation_rate,
+                   mean.n.mutations=5.4,
+                   pos_start=pos_start,
+                   pos_end=pos_end,
+                   save_final= FALSE)
+test_reads_example <- system.file("extdata", "test_sequences.sorted.bam",
+   package = "single")
+corrected_reads <- single_evaluate(bamfile = test_reads_example,
+                 single_fits = train,ref_seq = ref_seq,
+                 pos_start=pos_start,pos_end=pos_end,
+                 gaps_weights = "minimum")
 }
