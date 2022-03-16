@@ -184,8 +184,8 @@ Compute one consensus sequence weighted by QUAL values.
 <<>>=
 data_barcode = data.frame(
     nucleotide = unlist(sapply(as.character(corrected_reads),strsplit, split="")),
-    p_SINGLe=unlist(1-as(quality(corrected_reads),"NumericList")),
-    pos=rep(1:width(corrected_reads[1]),length(corrected_reads)))
+    p_SINGLe=unlist(1-as(Biostrings::quality(corrected_reads),"NumericList")),
+    pos=rep(1:Biostrings::width(corrected_reads[1]),length(corrected_reads)))
 weighted_consensus(df = data_barcode, cutoff_prob = 0.9)
 weighted_consensus(df = data_barcode, cutoff_prob = 0.999)
 
