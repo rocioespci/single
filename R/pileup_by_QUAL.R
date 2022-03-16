@@ -5,6 +5,7 @@
 #' @param QUAL_values Numeric vector. QUAL values to analyze in the data.
 #' @param pos_start Numeric. Position to start analyzing, counting starts from 1 and it refers to reference used for minimap2 alignment.
 #' @param pos_end  Numeric. Position to stop analyzing, counting starts from 1 and it refers to reference used for minimap2 alignment.
+#' @return data.frame with columns strand,pos,nucleotide,QUAL,countss
 #' @importFrom Rsamtools  PileupParam ScanBamParam pileup
 #' @importFrom GenomicAlignments seqnames strand
 #' @importFrom IRanges pos
@@ -20,12 +21,12 @@
 #' head(counts_pnq)
 pileup_by_QUAL <- function(bam_file, QUAL_values=seq(93,0),pos_start=NA,pos_end=NA){
     QUAL_values <- sort(QUAL_values, decreasing = TRUE)
-    cond = F
+    cond = FALSE
     for(q in QUAL_values){
         p_param <- Rsamtools::PileupParam(max_depth=1000000,min_base_quality=q,
-                               distinguish_strands=T,
-                               distinguish_nucleotides=T,
-                               include_deletions = T,
+                               distinguish_strands=TRUE,
+                               distinguish_nucleotides=TRUE,
+                               include_deletions = TRUE,
                                min_mapq = 0,
                                min_nucleotide_depth=0,
                                min_minor_allele_depth=0)
@@ -62,7 +63,7 @@ pileup_by_QUAL <- function(bam_file, QUAL_values=seq(93,0),pos_start=NA,pos_end=
             pileup_QUAL <- pileup_larger_than_q  %>%
                 mutate(QUAL=q)
         }
-        cond=T
+        cond=TRUE
     }
     pileup_QUAL <- pileup_QUAL %>%
         arrange(strand,pos,nucleotide,QUAL) %>%

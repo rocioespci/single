@@ -4,12 +4,6 @@
 #' @format Character vector of length 5
 "bases"
 
-#' ascii
-#'
-#' Equivalences of ascii code. Columns are Number, (ascii) Symbol, Q (score) and P (probability of error)
-#' @format data.frame size 94x4
-"ascii"
-
 #' mutation_rate
 #'
 #' Mutational rate matrix for error-prone PCR, obtained from GeneMorph II Random Mutagenesis Kit.

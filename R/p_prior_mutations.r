@@ -20,7 +20,7 @@
 #' counts_pnq <- pileup_by_QUAL(bam_file=train_reads_example,
 #'     pos_start=pos_start,pos_end=pos_end)
 #' p_prior_mutations <- p_prior_mutations(rates.matrix = mutation_rate,
-#'     mean.n.mut = 5,ref_seq = ref_seq,save = F)
+#'     mean.n.mut = 5,ref_seq = ref_seq,save = FALSE)
 #' head(p_prior_mutations)
 
 p_prior_mutations      <- function(rates.matrix, mean.n.mut, ref_seq,

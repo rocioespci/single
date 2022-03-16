@@ -20,6 +20,9 @@ pileup_by_QUAL(
 
 \item{pos_end}{Numeric. Position to stop analyzing, counting starts from 1 and it refers to reference used for minimap2 alignment.}
 }
+\value{
+data.frame with columns strand,pos,nucleotide,QUAL,countss
+}
 \description{
 To explain
 }

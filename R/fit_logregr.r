@@ -26,11 +26,11 @@
 #' counts_pnq <- pileup_by_QUAL(bam_file=train_reads_example,
 #'     pos_start=pos_start,pos_end=pos_end)
 #' p_prior_mutations <- p_prior_mutations(rates.matrix = mutation_rate,
-#'     mean.n.mut = 5,ref_seq = ref_seq,save = F)
+#'     mean.n.mut = 5,ref_seq = ref_seq,save = FALSE)
 #' p_prior_errors <- p_prior_errors(counts_pnq=counts_pnq,save=FALSE)
 #' fits <- fit_logregr(counts_pnq = counts_pnq,ref_seq=ref_seq,
 #'     p_prior_errors = p_prior_errors,p_prior_mutations = p_prior_mutations,
-#'     save=F)
+#'     save=FALSE)
 #' head(fits)
 fit_logregr <- function(counts_pnq,ref_seq,p_prior_errors,p_prior_mutations,
                 save=FALSE, output_file_fits,output_file_data,verbose=FALSE){

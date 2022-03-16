@@ -155,7 +155,7 @@ Compute a priori probability of having a mutation
 p_prior_mutations <- p_prior_mutations(rates.matrix = mutation_rate,
                         mean.n.mut = 5,
                         ref_seq = ref_seq,
-                        save = F)
+                        save = FALSE)
 head(p_prior_mutations)
 @
 
@@ -165,7 +165,7 @@ fits <- fit_logregr(counts_pnq = counts_pnq,
                     ref_seq=ref_seq,
                     p_prior_errors = p_prior_errors,
                     p_prior_mutations = p_prior_mutations,
-                    save=F)
+                    save=FALSE)
 head(fits)
 @
 
