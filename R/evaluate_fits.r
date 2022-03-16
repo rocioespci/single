@@ -20,7 +20,7 @@
 #' ref_seq_file = system.file("extdata", "ref_seq.fasta", package = "single")
 #' ref_seq = Biostrings::readDNAStringSet(ref_seq_file)
 #' evaluated_fits <- evaluate_fits(pos_range = c(1,5),q_range = c(0,10),
-#'                      data_fits = fits,ref_seq = ref_seqE)
+#'                      data_fits = fits,ref_seq = ref_seq)
 evaluate_fits <- function(pos_range,q_range,output_file, data_fits, ref_seq,
                             verbose=FALSE, save=FALSE){
     t0 <- proc.time()
