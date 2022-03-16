@@ -24,17 +24,17 @@ pileup_by_QUAL <- function(bam_file, QUAL_values=seq(93,0),pos_start=NA,pos_end=
     cond = FALSE
     for(q in QUAL_values){
         p_param <- Rsamtools::PileupParam(max_depth=1000000,min_base_quality=q,
-                               distinguish_strands=TRUE,
-                               distinguish_nucleotides=TRUE,
-                               include_deletions = TRUE,
-                               min_mapq = 0,
-                               min_nucleotide_depth=0,
-                               min_minor_allele_depth=0)
+                            distinguish_strands=TRUE,
+                            distinguish_nucleotides=TRUE,
+                            include_deletions = TRUE,
+                            min_mapq = 0,
+                            min_nucleotide_depth=0,
+                            min_minor_allele_depth=0)
         s_param <- Rsamtools::ScanBamParam(mapqFilter=0)
         pileup_larger_than_q <- Rsamtools::pileup(BamFile(bam_file),
-                                       scanBamParam = s_param,
-                                       pileupParam = p_param )%>%
-                                select(-seqnames)
+                            scanBamParam = s_param,
+                            pileupParam = p_param )%>%
+                            select(-seqnames)
         if(!is.na(pos_end)){
             pileup_larger_than_q <- pileup_larger_than_q %>%
                 filter(pos <=pos_end )
@@ -47,7 +47,7 @@ pileup_by_QUAL <- function(bam_file, QUAL_values=seq(93,0),pos_start=NA,pos_end=
         if(nrow(pileup_larger_than_q)==0){next()}
         if(cond){
             pileup_q <- left_join(x=pileup_larger_than_q,y=pileup_memory,
-                                  by= c("pos", "strand", "nucleotide")) %>%
+                                    by= c("pos", "strand", "nucleotide")) %>%
                 mutate(count.y=ifelse(is.na(count.y),0,count.y)) %>%
                 mutate(count=  count.x - count.y) %>%
                 arrange(pos) %>%

@@ -21,7 +21,7 @@
 #' evaluated_fits <- evaluate_fits(pos_range = c(1,5),q_range = c(0,10),
 #'                      data_fits = fits,ref_seq = ref_seqE)
 evaluate_fits <- function(pos_range,q_range,output_file, data_fits, ref_seq,
-                          verbose=FALSE, save=FALSE){
+                            verbose=FALSE, save=FALSE){
     t0 <- proc.time()
     ref_seq_char = strsplit(as.character(ref_seq),"")[[1]]
 
@@ -40,8 +40,8 @@ evaluate_fits <- function(pos_range,q_range,output_file, data_fits, ref_seq,
         if(frequencies$isWT[i]==1){ next() }
         #fit models
         frequencies$p_SINGLe [i] <- glm.predict.(x=frequencies$QUAL[i],
-                                                             slope = frequencies$prior_slope[i],
-                                                             intercept = frequencies$prior_intercept[i])
+                                    slope = frequencies$prior_slope[i],
+                                    intercept = frequencies$prior_intercept[i])
     }
     t1 <- proc.time()
     if(verbose){print(t1-t0)}
