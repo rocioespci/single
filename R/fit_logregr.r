@@ -2,7 +2,7 @@
 #'
 #' This is an auxiliary function in single package. It takes counts_pnq and for each position and nucleotide it fits SINGLE's logistic regression.
 #' @param counts_pnq Data frame with columns position nucleoide quality counts, as returned by pileup_by_QUAL
-#' @param ref_seq Reference sequence: vector of characters, as returned by load_ref_seq
+#' @param ref_seq DNAStringSet containing the true reference sequence.
 #' @param p_prior_errors Data frame with columns position nucleotide prior.error, as the one returned by p_prior_errors().
 #' @param p_prior_mutations Data frame with columns wt.base, nucleotide and p_mutation (probaility of mutation), as the one returned by p_prior_mutations().
 #' @param save Logical. Should data be saved in a output_file?
@@ -38,7 +38,7 @@ fit_logregr <- function(counts_pnq,ref_seq,p_prior_errors,p_prior_mutations,
     #Pre-editing data
     ref_seq_char = strsplit(as.character(ref_seq),"")[[1]]
     data <- dplyr::as_tibble(counts_pnq)%>%
-        dplyr::mutate(wt.base = ref_seq_char[.data$pos])          # Add wildtype base
+        dplyr::mutate(wt.base = ref_seq_char[.data$pos])# Add wildtype base
 
     ## Wildtype matrix: keep rows with wildtype reads
     data_wt <- data %>%
@@ -47,12 +47,13 @@ fit_logregr <- function(counts_pnq,ref_seq,p_prior_errors,p_prior_mutations,
         dplyr::rename(counts.wt=count)
 
     ## Data with mutations (errors)
-    data_mut <- data %>%                                             #start from data
-        dplyr::filter(.data$nucleotide!=.data$wt.base)              #keep only mutations
+    data_mut <- data %>%                              #start from data
+        dplyr::filter(.data$nucleotide!=.data$wt.base)#keep only mutations
 
     missing_position <- setdiff(seq_len(max(data$pos)) ,data_mut$pos)
     if(length(missing_position)>0){
-        data.aux <- data.frame(pos=missing_position, nucleotide=NA, QUAL=20,count=NA,wt.base=NA) %>%
+        data.aux <- data.frame(pos=missing_position,
+                        nucleotide=NA, QUAL=20,count=NA,wt.base=NA) %>%
             mutate(wt.base=ref_seq_char[.data$pos]) %>%
             mutate(nucleotide=if_else(.data$wt.base=="A","C","A")) %>%
             mutate(strand="+")
@@ -64,15 +65,15 @@ fit_logregr <- function(counts_pnq,ref_seq,p_prior_errors,p_prior_mutations,
         tidyr::expand(.data$pos,.data$nucleotide,.data$QUAL,.data$strand)
     data_mut <- data_mut %>%
         dplyr::full_join(data_mut_expansion,
-                        by = c("pos", "nucleotide", "QUAL","strand"))%>%        # complete all combinations position - nucleotide - quality
-        dplyr::mutate(wt.base = ref_seq_char[.data$pos]) %>%                    # fill wildtype base for missing values (new rows)
-        dplyr::full_join(data_wt,   by=c("pos", "QUAL","wt.base","strand"))%>%   # add wildtype info in new columns
-        dplyr::left_join(p_prior_mutations, by=c("wt.base", "nucleotide"))%>%      # add prior of being mutated
-        dplyr::left_join(p_prior_errors,    by=c("pos", "nucleotide","strand"))%>%     # add prior of being an error
-        dplyr::filter(.data$nucleotide!=.data$wt.base)%>%                                   # remove wildtype rows
-        dplyr::mutate(count=tidyr::replace_na(.data$count,0))%>%                           # fill NA with 0
-        dplyr::mutate(counts.wt=tidyr::replace_na(.data$counts.wt,0))%>%                     # fill NA with 0
-        dplyr::mutate(p_prior_error=tidyr::replace_na(.data$p_prior_error,0))                    # fill NA with 0
+                        by = c("pos", "nucleotide", "QUAL","strand"))%>%
+        dplyr::mutate(wt.base = ref_seq_char[.data$pos]) %>%
+        dplyr::full_join(data_wt,   by=c("pos", "QUAL","wt.base","strand"))%>%
+        dplyr::left_join(p_prior_mutations, by=c("wt.base", "nucleotide"))%>%
+        dplyr::left_join(p_prior_errors,by=c("pos", "nucleotide","strand"))%>%
+        dplyr::filter(.data$nucleotide!=.data$wt.base)%>%
+        dplyr::mutate(count=tidyr::replace_na(.data$count,0))%>%
+        dplyr::mutate(counts.wt=tidyr::replace_na(.data$counts.wt,0))%>%
+        dplyr::mutate(p_prior_error=tidyr::replace_na(.data$p_prior_error,0))
     rm(data_mut_expansion)
 
     ## Count number of errors/good reads by position and nucleotide
@@ -81,15 +82,15 @@ fit_logregr <- function(counts_pnq,ref_seq,p_prior_errors,p_prior_mutations,
         dplyr::summarise(total.counts.mut=sum(.data$count,na.rm=TRUE),
                         total.counts.wt=sum(.data$counts.wt,na.rm=TRUE))%>%
         dplyr::mutate(total.counts=.data$total.counts.mut+.data$total.counts.wt)
-    data_mut <- dplyr::full_join(data_mut, total_counts, by=c("pos", "nucleotide","strand"))
+    data_mut <- dplyr::full_join(data_mut, total_counts,
+                                    by=c("pos", "nucleotide","strand"))
 
     ## reweight counts by prior probabilities
     data_mut <- data_mut %>%
-        dplyr::mutate(pc = .data$p_mutation / (.data$p_mutation+.data$p_prior_error),                            #prob of being correct
-                        pi = .data$p_prior_error / (.data$p_mutation+.data$p_prior_error))%>%                        #prob of being an error
-        dplyr::mutate(counts.scaled    = (.data$count / .data$total.counts.mut * .data$pi * .data$total.counts ),   #counts errors re-weighted
-                    counts.wt.scaled = (.data$counts.wt / .data$total.counts.wt * .data$pc * .data$total.counts )) #counts wildtype re-weighted
-
+        dplyr::mutate(pc=.data$p_mutation/(.data$p_mutation+.data$p_prior_error),
+            pi=.data$p_prior_error/(.data$p_mutation+.data$p_prior_error))%>%
+        dplyr::mutate(counts.scaled =(.data$count/.data$total.counts.mut*.data$pi*.data$total.counts),
+                    counts.wt.scaled =(.data$counts.wt/.data$total.counts.wt*.data$pc*.data$total.counts))
     ## Fit data:
     data_fits <- data_mut %>%
         dplyr::select(.data$strand,.data$pos, .data$nucleotide)%>%
@@ -98,7 +99,7 @@ fit_logregr <- function(counts_pnq,ref_seq,p_prior_errors,p_prior_mutations,
         dplyr::mutate(prior_slope=NA, prior_intercept=NA)
     n_i <- nrow(data_fits)
     if(verbose){cat("\n Fitting \n")}
-    if(verbose){ pb = utils::txtProgressBar(min = 0, max = nrow(data_fits), style = 3) }
+    if(verbose){pb=utils::txtProgressBar(min=0,max=nrow(data_fits),style = 3)}
     for (i in seq_len(nrow(data_fits))){
         if(verbose){utils::setTxtProgressBar(pb,i)}
         #Keep data from this position & nucleotide
@@ -112,15 +113,17 @@ fit_logregr <- function(counts_pnq,ref_seq,p_prior_errors,p_prior_mutations,
             data_fits$prior_slope[i]       <- NA
             data_fits$prior_intercept[i]   <- NA
 
-            if(verbose){warning('Position ', data_fits$pos[i], data_fits$nucleotide[i], " has no data to be fitted.\n")}
+            if(verbose){
+                warning('Position ', data_fits$pos[i], data_fits$nucleotide[i], " has no data to be fitted.\n")
+            }
             next()
         }
         qval  <- aux_df$QUAL
         yvals <- aux_df$proportion.wt.scaled
 
         #Corrected fit by prior data
-        if(! (all(is.na(aux_df$counts.wt.scaled)) | all(is.na(aux_df$counts.scaled))) ){
-            aux_prior_fit                <- stats::glm(yvals[!is.na(yvals)]~ qval[!is.na(yvals)],family = "quasibinomial")
+        if(!(all(is.na(aux_df$counts.wt.scaled))|all(is.na(aux_df$counts.scaled)))){
+            aux_prior_fit  <- stats::glm(yvals[!is.na(yvals)]~ qval[!is.na(yvals)],family = "quasibinomial")
             aux_prior_coefficients       <- stats::coefficients(aux_prior_fit)
             data_fits$prior_slope[i]     <- aux_prior_coefficients[2]
             data_fits$prior_intercept[i] <- aux_prior_coefficients[1]
@@ -128,8 +131,10 @@ fit_logregr <- function(counts_pnq,ref_seq,p_prior_errors,p_prior_mutations,
     }
     # SAVE RESULTS
     if(save){
-        utils::write.table(data_fits, file=output_file_fits, quote = FALSE, row.names = FALSE)
-        utils::write.table(data_mut,file=output_file_data, quote = FALSE, row.names = FALSE)
+        utils::write.table(data_fits, file=output_file_fits,
+                            quote = FALSE, row.names = FALSE)
+        utils::write.table(data_mut,file=output_file_data,
+                            quote = FALSE, row.names = FALSE)
     }
     return(data_fits)
 }

@@ -3,7 +3,7 @@
 #' Main function to train a SINGLE model in a set of reads of a reference / wild type sequence. To get the input data you will need to run before a minimap2 alignment and samtools counts.
 #'
 #' @param bamfile File containing the counts per position returned by samtools mpileup
-#' @param output_prefix String. Prefix for output files
+#' @param output String. Prefix for output files
 #' @param refseq_fasta Fasta file containing reference sequence
 #' @param rates.matrix Mutation rate matrix: 4x5 matrix, each row/col representing a nucleotide (col adds deletion), and the values is the mutational rate from row to col.
 #' @param mean.n.mutations Mean number of mutations expected (one number).
@@ -40,7 +40,7 @@
 #' @import Rsamtools
 #' @importFrom Biostrings width readDNAStringSet
 single_train    <- function(bamfile,
-                            output_prefix,
+                            output,
                             refseq_fasta,
                             rates.matrix=NULL,mean.n.mutations=NULL,
                             pos_start=NULL,pos_end=NULL,
@@ -49,7 +49,6 @@ single_train    <- function(bamfile,
 
     options(dplyr.summarise.inform = FALSE)
     ref_seq <- readDNAStringSet(refseq_fasta)
-
     if(is.null(pos_start)|!is.numeric(pos_start)){
         pos_start <- 1;
         warning("single_train: pos_start set to 1\n")
@@ -58,18 +57,26 @@ single_train    <- function(bamfile,
         pos_end <- width(ref_seq);
         warning("single_train: pos_end set to length(ref_seq):", pos_end,"\n")
     }
-
-    if(is.null(rates.matrix)){rates.matrix=mutation_rate; warning("single_train: rates matrix set to default mutation_rate\n")}
-    if(is.null(colnames(rates.matrix))){stop('single_train: Missing colnames of rates.matrix')}
-    if(is.null(rownames(rates.matrix))){stop('single_train: Missing rownames of rates.matrix')}
-    if(is.null(mean.n.mutations)){stop('single_train: Missing mean.n.mutations')}
+    if(is.null(rates.matrix)){
+        rates.matrix=mutation_rate;
+        warning("single_train: rates matrix set to default mutation_rate\n")
+    }
+    if(is.null(colnames(rates.matrix))){
+        stop('Missing colnames of rates.matrix')
+    }
+    if(is.null(rownames(rates.matrix))){
+        stop('Missing rownames of rates.matrix')
+    }
+    if(is.null(mean.n.mutations)){
+        stop('single_train: Missing mean.n.mutations')
+    }
 
     ### Names of output and auxiliary files
-    outfile_prior_errors       <- paste0(output_prefix,"_single_prob_prior_errors.txt")
-    outfile_prior_mutations    <- paste0(output_prefix,"_single_prob_prior_mutations.txt")
-    outfile_fits               <- paste0(output_prefix,"_single_fit.txt")
-    outfile_data               <- paste0(output_prefix,"_single_data.txt")
-    outfile_evaluation         <- paste0(output_prefix,"_single_results.txt")
+    outfile_prior_errors    <- paste0(output,"_SINGLe_p_prior_errors.txt")
+    outfile_prior_mutations <- paste0(output,"_SINGLe_p_prior_mutations.txt")
+    outfile_fits            <- paste0(output,"_SINGLe_fits.txt")
+    outfile_data            <- paste0(output,"_SINGLe_data.txt")
+    outfile_evaluation      <- paste0(output,"_SINGLe_results.txt")
 
     if(verbose){cat("single_train\n")}
 
@@ -83,16 +90,16 @@ single_train    <- function(bamfile,
     # Calculate priors errors
     if(verbose){cat("\t p_prior-error \n")}
     p_prior_errors <- p_prior_errors(counts_pnq=counts_pnq,
-                                  output_file=outfile_prior_errors,
-                                  save=save_partial)
+                        output_file=outfile_prior_errors,
+                        save=save_partial)
 
     ## Compute information of priors probabilities
     if(verbose){cat("\t p_prior-right\n")}
-    p_prior_mutations     <- p_prior_mutations(rates.matrix = rates.matrix,
-                                          mean.n.mut = mean.n.mutations,
-                                          ref_seq = ref_seq,
-                                          save = save_partial,
-                                          output_file=outfile_prior_mutations)
+    p_prior_mutations   <- p_prior_mutations(rates.matrix = rates.matrix,
+                            mean.n.mut = mean.n.mutations,
+                            ref_seq = ref_seq,
+                            save = save_partial,
+                            output_file=outfile_prior_mutations)
 
     #Fit wt
     if(verbose){cat("\t Fitting\n")}
@@ -107,12 +114,11 @@ single_train    <- function(bamfile,
 
     if(verbose){cat("\t Evaluating \n")}
     evaluated_fits <- evaluate_fits(pos_range = c(1,pos_end-pos_start+1),
-                                    q_range = c(1,50),
-                                    output_file = outfile_evaluation,
-                                    data_fits = fits,
-                                    ref_seq = ref_seq, verbose = verbose, save=save_final)
+                        q_range = c(1,50),
+                        output_file = outfile_evaluation,
+                        data_fits = fits,
+                        ref_seq = ref_seq,
+                        verbose = verbose, save=save_final)
 
     return(evaluated_fits)
 }
-
-# bam_reference = "barcode01_for.sorted.bam"

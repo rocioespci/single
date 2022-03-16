@@ -95,7 +95,7 @@ The main flow of SINGLe is first to  train the model using nanopore reads of the
 train_reads_example <- system.file("extdata", "train_seqs_500.sorted.bam",
                                    package = "single")
 train <- single_train(bamfile=train_reads_example,
-                      output_prefix="train",
+                      output="train",
                       refseq_fasta=refseq_fasta,
                       rates.matrix=mutation_rate,
                       mean.n.mutations=5.4,

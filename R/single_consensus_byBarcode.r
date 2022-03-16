@@ -75,8 +75,8 @@ single_consensus_byBarcode <- function(barcodes_file,
         aux_quals <- 1-as(quality(seqs_in_barcode),"NumericList")
         aux_pos <- lapply(aux_seqs, seq_along)
         data_barcode = data.frame(nucleotide = unlist(aux_seqs),
-                                  p_SINGLe=unlist(aux_quals),
-                                  pos=unlist(aux_pos) )
+                                    p_SINGLe=unlist(aux_quals),
+                                    pos=unlist(aux_pos) )
         rownames(data_barcode) <- NULL
         consensus_sequences[[bc]] <- weighted_consensus(df = data_barcode, cutoff_prob = 0)
         if(verbose){utils::setTxtProgressBar(pb,bc)}

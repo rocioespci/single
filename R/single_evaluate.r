@@ -77,12 +77,10 @@ single_evaluate <- function(bamfile, single_fits,
     reads <- Rsamtools::scanBam(bf)
 
     reads_aligned <- GenomicAlignments::sequenceLayer(reads[[1]]$seq,
-                                                      reads[[1]]$cigar,
-                                                      to = "reference")
+                                reads[[1]]$cigar,to = "reference")
     names(reads_aligned) <- reads[[1]]$qname
     scores_aligned <- GenomicAlignments::sequenceLayer(reads[[1]]$qual,
-                                                       reads[[1]]$cigar,
-                                                       to = "reference")
+                                reads[[1]]$cigar,to = "reference")
     names(scores_aligned) <- reads[[1]]$qname
 
     #Fill with gaps at the end of sequences shorter than pos_end
@@ -124,8 +122,8 @@ single_evaluate <- function(bamfile, single_fits,
             del_pos_end = del_positions[Breaks_end]
             replacement <- paste0(rep(as.character(subseq(scores_aligned[i], del_pos_ini-1, del_pos_ini-1)), Breaks_end-Breaks_ini+1),collapse="")
             scores_aligned[i] <-Biostrings::replaceAt(scores_aligned[i],
-                                          at=IRanges(del_pos_ini,del_pos_end),
-                                          replacement)
+                                    at=IRanges(del_pos_ini,del_pos_end),
+                                    replacement)
             n_del_end = length(Breaks_ini:Breaks_end)
         }else{n_del_end=NA}
 
@@ -172,7 +170,7 @@ single_evaluate <- function(bamfile, single_fits,
                                     strand=unlist(reads[[1]]$strand[i]))
         mismatches_df <- mismatches_df %>%
             left_join(qtable %>% select(c("nucleotide","pos","QUAL","strand","isWT","p_SINGLe")),
-                      by = c("nucleotide","pos","QUAL","strand"))
+                    by = c("nucleotide","pos","QUAL","strand"))
         na_single <- is.na(mismatches_df$p_SINGLe)
         if(any(na_single)){
             mismatches_df <- mismatches_df[!na_single,]

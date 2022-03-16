@@ -3,7 +3,7 @@
 #' This is an auxiliary function in single package. It computes the prior probability of mutation in a gene library.
 #' @param rates.matrix Mutation rate matrix: 4x5 matrix, each row/col representing a nucleotide (col adds deletion), and the values is the mutational rate from row to col.
 #' @param mean.n.mut Mean number of mutations expected (one number).
-#' @param ref_seq Reference sequence: vector of characters, as returned by load_ref_seq
+#' @param ref_seq DNAStringSet containing the true reference sequence.
 #' @param save Logical. Should data be saved in a output_file?
 #' @param output_file File name for output, if save=TRUE.
 #' @return Data frame with columns wt.base (wild type nucleotide), nucleotide (mutated nucleotide), p_mutation (probaility of mutation)
