@@ -6,7 +6,7 @@
 \usage{
 single_train(
   bamfile,
-  output_prefix,
+  output,
   refseq_fasta,
   rates.matrix = NULL,
   mean.n.mutations = NULL,
@@ -20,7 +20,7 @@ single_train(
 \arguments{
 \item{bamfile}{File containing the counts per position returned by samtools mpileup}
 
-\item{output_prefix}{String. Prefix for output files}
+\item{output}{String. Prefix for output files}
 
 \item{refseq_fasta}{Fasta file containing reference sequence}
 

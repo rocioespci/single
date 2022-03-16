@@ -36,7 +36,7 @@ Main function to compute consensus after correcting reads by a SINGLE model.
 pos_start=1
 pos_end = 10
 refseq_fasta = system.file("extdata", "ref_seq.fasta", package = "single")
-ref_seq <- subseq(readDNAStringSet(refseq_fasta), pos_start,pos_end)
+ref_seq <- subseq(Biostrings::readDNAStringSet(refseq_fasta), pos_start,pos_end)
 train_reads_example <- system.file("extdata", "train_seqs_500.sorted.bam",
                                    package = "single")
 train <- single_train(bamfile=train_reads_example,

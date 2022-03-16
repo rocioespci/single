@@ -48,7 +48,7 @@ single_train    <- function(bamfile,
                             save_final=TRUE){
 
     options(dplyr.summarise.inform = FALSE)
-    ref_seq <- readDNAStringSet(refseq_fasta)
+    ref_seq <- Biostrings::readDNAStringSet(refseq_fasta)
     if(is.null(pos_start)|!is.numeric(pos_start)){
         pos_start <- 1;
         warning("single_train: pos_start set to 1\n")

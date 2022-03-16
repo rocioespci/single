@@ -12,12 +12,13 @@
 #' @import dplyr
 #' @importFrom rlang .data
 #' @importFrom utils txtProgressBar setTxtProgressBar write.table
+#' @importFrom Biostrings readDNAStringSet
 #' @export evaluate_fits
 #' @examples
 #' pos_range = seq_len(100)
 #' q_range = seq(1,50)
 #' ref_seq_file = system.file("extdata", "ref_seq.fasta", package = "single")
-#' ref_seq = readDNAStringSet(ref_seq_file)
+#' ref_seq = Biostrings::readDNAStringSet(ref_seq_file)
 #' evaluated_fits <- evaluate_fits(pos_range = c(1,5),q_range = c(0,10),
 #'                      data_fits = fits,ref_seq = ref_seqE)
 evaluate_fits <- function(pos_range,q_range,output_file, data_fits, ref_seq,

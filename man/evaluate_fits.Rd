@@ -17,29 +17,29 @@ evaluate_fits(
 \arguments{
 \item{pos_range}{Numeric vector. Positions to evaluate.}
 
-\item{q_range}{Numeric vector. Qscores to evaluate.}
+\item{q_range}{Numeric vector. QUAL to evaluate.}
 
 \item{output_file}{File name for output, if save=TRUE.}
 
 \item{data_fits}{Data.frame with columns position nucleotide slope intercept as the one returned by fit_logregr}
 
-\item{ref_seq}{Reference sequence: vector of characters, as returned by load_ref_seq}
+\item{ref_seq}{DNAStringSet containing the true reference sequence.}
 
 \item{verbose}{Logical.}
 
 \item{save}{Logical. Should results be saved in output_file?}
 }
 \value{
-data.frame with SINGLE fits evaluated for pos_range and q_range. Columns are: position, nucleotide, quality, p_SINGLe, isWT.
+data.frame with SINGLE fits evaluated for pos_range and q_range.
 }
 \description{
-Evaluates single fits for all positions, nucleotides and Qscores in the given ranges.
+Evaluates SINGLe for pos, nucleotides and QUAL in the given ranges.
 }
 \examples{
 pos_range = seq_len(100)
 q_range = seq(1,50)
 ref_seq_file = system.file("extdata", "ref_seq.fasta", package = "single")
-ref_seq = readDNAStringSet(ref_seq_file)
+ref_seq = Biostrings::readDNAStringSet(ref_seq_file)
 evaluated_fits <- evaluate_fits(pos_range = c(1,5),q_range = c(0,10),
                      data_fits = fits,ref_seq = ref_seqE)
 }

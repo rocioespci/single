@@ -17,7 +17,7 @@ p_prior_mutations(
 
 \item{mean.n.mut}{Mean number of mutations expected (one number).}
 
-\item{ref_seq}{Reference sequence: vector of characters, as returned by load_ref_seq}
+\item{ref_seq}{DNAStringSet containing the true reference sequence.}
 
 \item{save}{Logical. Should data be saved in a output_file?}
 

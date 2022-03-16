@@ -18,7 +18,7 @@ fit_logregr(
 \arguments{
 \item{counts_pnq}{Data frame with columns position nucleoide quality counts, as returned by pileup_by_QUAL}
 
-\item{ref_seq}{Reference sequence: vector of characters, as returned by load_ref_seq}
+\item{ref_seq}{DNAStringSet containing the true reference sequence.}
 
 \item{p_prior_errors}{Data frame with columns position nucleotide prior.error, as the one returned by p_prior_errors().}
 
