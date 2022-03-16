@@ -43,12 +43,13 @@
 #'                  gaps_weights = "minimum")
 #' @export single_evaluate
 #' @importFrom Biostrings QualityScaledDNAStringSet writeQualityScaledXStringSet PhredQuality readDNAStringSet vmatchPattern replaceAt extractAt compareStrings width
+#' @importFrom dplyr %>% left_join select
 #' @importFrom IRanges IRanges
 #' @importFrom stringr str_locate_all
 #' @importFrom Rsamtools BamFile scanBam
 #' @importFrom GenomicAlignments sequenceLayer
 #' @importFrom Biostrings subseq
-#' @importFrom stats start
+#' @importFrom BiocGenerics start
 single_evaluate <- function(bamfile, single_fits,
                             ref_seq,
                             pos_start=NULL, pos_end=NULL,
@@ -96,7 +97,7 @@ single_evaluate <- function(bamfile, single_fits,
     for(i in seq(length(reads_aligned))){
 
         ## REPLACE DELETION SCORES
-        del_positions <- start(vmatchPattern("-",reads_aligned[i])[[1]])
+        del_positions <- BiocGenerics::start(Biostrings::vmatchPattern("-",reads_aligned[i])[[1]])
         ndel = length(del_positions)
 
         if(ndel==0){next()}
@@ -122,7 +123,9 @@ single_evaluate <- function(bamfile, single_fits,
             del_pos_ini = del_positions[Breaks_ini]
             del_pos_end = del_positions[Breaks_end]
             replacement <- paste0(rep(as.character(subseq(scores_aligned[i], del_pos_ini-1, del_pos_ini-1)), Breaks_end-Breaks_ini+1),collapse="")
-            scores_aligned[i] <-Biostrings::replaceAt(scores_aligned[i],at=IRanges(del_pos_ini,del_pos_end),replacement)
+            scores_aligned[i] <-Biostrings::replaceAt(scores_aligned[i],
+                                          at=IRanges(del_pos_ini,del_pos_end),
+                                          replacement)
             n_del_end = length(Breaks_ini:Breaks_end)
         }else{n_del_end=NA}
 

@@ -78,15 +78,15 @@ samtools sort LIB_READS.bam -o LIB_READS.sorted.bams
 
 \subsection{Run SINGLe in R}
 
-SINGLe consists on three steps: train model, evaluate model, compute consensus. As it can be time consuming, I will only analyze a sub set of positions
+SINGLe consists on three steps: train model, evaluate model, compute consensus. As it can be time consuming, I will only analyze a subset of positions
 <<>>=
 library(single)
-library(Biostrings)
+#library(Biostrings)
 pos_start <- 1
 pos_end <- 10
 
 refseq_fasta <- system.file("extdata", "ref_seq.fasta", package = "single")
-ref_seq <- subseq(readDNAStringSet(refseq_fasta), pos_start,pos_end)
+ref_seq <- Biostrings::subseq(Biostrings::readDNAStringSet(refseq_fasta), pos_start,pos_end)
 
 @
 
