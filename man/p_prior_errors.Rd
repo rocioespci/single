@@ -23,8 +23,7 @@ This is an auxiliary function in single package. It takes a data frame with coun
 refseq_fasta <- system.file("extdata", "ref_seq.fasta", package = "single")
 train_reads_example <- system.file("extdata", "train_seqs_500.sorted.bam",
                                    package = "single")
-counts_pnq <- pileup_by_QUAL(bam_file=train_reads_example,
-    pos_start=1,pos_end=10)
+counts_pnq <- pileup_by_QUAL(train_reads_example,pos_start=1,pos_end=10)
 p_prior_errors <- p_prior_errors(counts_pnq=counts_pnq)
 head(p_prior_errors)
 }

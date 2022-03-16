@@ -36,18 +36,10 @@ data.frame with SINGLE fits evaluated for pos_range and q_range.
 Evaluates SINGLe for pos, nucleotides and QUAL in the given ranges.
 }
 \examples{
-train_reads_example <- system.file("extdata","train_seqs_500.sorted.bam",
-                                   package = "single")
 refseq_fasta = system.file("extdata", "ref_seq.fasta", package = "single")
 ref_seq = Biostrings::readDNAStringSet(refseq_fasta)
-counts_pnq <- pileup_by_QUAL(bam_file=train_reads_example,
-                 pos_start=1, pos_end=10)
-p_prior_errors <- p_prior_errors(counts_pnq=counts_pnq)
-p_prior_mutations <- p_prior_mutations(rates.matrix = mutation_rate,
-                 mean.n.mut = 5,ref_seq = ref_seq)
-fits <- fit_logregr(counts_pnq = counts_pnq,ref_seq=ref_seq,
-                 p_prior_errors = p_prior_errors,
-                 p_prior_mutations = p_prior_mutations)
+fits_file <- system.file("extdata","fits_example.txt",package = "single")
+fits <- read.table(fits_file, header=TRUE)
 pos_range = seq_len(100)
 q_range = seq(1,50)
 evaluated_fits <- evaluate_fits(pos_range = c(1,5),q_range = c(0,10),

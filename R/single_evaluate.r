@@ -24,12 +24,8 @@
 #' @examples
 #' refseq_fasta <- system.file("extdata", "ref_seq.fasta", package = "single")
 #' ref_seq <- Biostrings::subseq(Biostrings::readDNAStringSet(refseq_fasta), 1,10)
-#' train_reads_example <- system.file("extdata", "train_seqs_500.sorted.bam",
-#'                                    package = "single")
-#' train <- single_train(bamfile=train_reads_example,
-#'                    refseq_fasta=refseq_fasta,
-#'                    rates.matrix=mutation_rate,mean.n.mutations=5.4,
-#'                    pos_start=1,pos_end=10)
+#' train_file <- system.file("extdata", "train_example.txt", package = "single")
+#' train <- read.table(train_file, header=TRUE)
 #' test_reads_example <- system.file("extdata", "test_sequences.sorted.bam",
 #'    package = "single")
 #' corrected_reads <- single_evaluate(bamfile = test_reads_example,

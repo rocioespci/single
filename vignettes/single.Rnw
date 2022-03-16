@@ -43,7 +43,6 @@ For more details, please refer to our pre-print "Accurate gene consensus at low 
 \section{Installation}
 
 
-
 \section{How to use}
 
 \subsection{Before starting}

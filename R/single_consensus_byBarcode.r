@@ -17,21 +17,15 @@
 #' @examples
 #' refseq_fasta = system.file("extdata", "ref_seq.fasta", package = "single")
 #' ref_seq <- Biostrings::subseq(Biostrings::readDNAStringSet(refseq_fasta), 1,10)
-#' train_reads_example <- system.file("extdata", "train_seqs_500.sorted.bam",
-#'                                    package = "single")
-#' train <- single_train(bamfile=train_reads_example,
-#'                    refseq_fasta=refseq_fasta,
-#'                    rates.matrix=mutation_rate,mean.n.mutations=5.4,
-#'                    pos_start=1,pos_end=10)
-#' test_reads_example = system.file("extdata", "test_sequences.sorted.bam",
-#'    package = "single")
-#' corrected_reads <- single_evaluate(bamfile = test_reads_example,
+#' train_file <- system.file("extdata", "train_example.txt", package = "single")
+#' train <- read.table(train_file, header=TRUE)
+#' lib_example = system.file("extdata", "test_sequences.sorted.bam",package = "single")
+#' corrected_reads <- single_evaluate(bamfile = lib_example,
 #'                  single_fits = train,ref_seq = ref_seq,
 #'                  pos_start=1,pos_end=10,gaps_weights = "minimum")
-#' barcodes_table_example = system.file("extdata", "Barcodes_table.txt",
-#'    package = "single")
+#' barcodes = system.file("extdata", "Barcodes_table.txt",package = "single")
 #' consensus <- single_consensus_byBarcode(
-#'                  barcodes_file = barcodes_table_example,
+#'                  barcodes_file = barcodes,
 #'                  single_corrected_seqs = corrected_reads,
 #'                  verbose = FALSE)
 single_consensus_byBarcode <- function(barcodes_file,
