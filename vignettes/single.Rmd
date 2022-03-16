@@ -1,99 +1,79 @@
-\documentclass{article}
-<<style-Sweave, eval=TRUE, echo=FALSE, results=tex>>=
-BiocStyle::latex()
-@
+---
+title: "single"
+author:
+- name: Rocio Espada
+  affiliation: ESPCI Paris
+package: single
+output:
+  BiocStyle::html_document
+abstract: |
+  This vignettes shows how to use single, a package to improve consensus calling on nanopore sequencing of gene libraries.
+vignette: |
+  %\VignetteIndexEntry{single}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
 
-%\VignetteIndexEntry{[single]}
+# Introduction
 
-\bioctitle[SINGLe]{SINGLe - Accurate consensus sequence from nanopore reads of a gene library}
-\author{Rocio ESPADA\thanks{\email{rocio.espada@espci.fr}}\\ ESPCI Paris}
-
-\usepackage{listings}
-
-\begin{document}
-\SweaveOpts{concordance=TRUE}
- \maketitle
-
-
-
-
-\begin{abstract}
-
-This vignettes shows how to use single, a package to improve consensus calling on nanopore sequencing of gene libraries.
-
-\end{abstract}
-
-\packageVersion{\Sexpr{BiocStyle::pkg_ver("single")}}
-
-
-\tableofcontents
-
-\newpage
-
-\section{Introduction}
 SINGLe computes consensus sequence of DNA reads by (noisy) nanopore sequencing. It is focused on long amplicons sequencing, and it aims to the reads of gene libraries, typically used in directed evolution experiments.
 
-SINGLe takes advantage that gene libraries are created from an original wild type or reference sequence, and it characterizes the systematic errors made by nanopore sequencing. Then, uses that information to correct the confidence values assigned to each nucleotide read in the mutants library.
+SINGLe takes advantage that gene libraries are created from an original wild type or reference sequence, and it characterizes the systematic errors made by nanopore sequencing. Then, uses that information to correct the confidence values (QUAL) assigned to each nucleotide read in the mutants library.
 
 Finally, given that you can identify which variant was read in each case (for example by the use of unique molecular identifiers or DNA barcodes), SINGLe groups them and computes the consensus sequence by weighting the frequencies with the corrected confidence values.
 
 For more details, please refer to our pre-print "Accurate gene consensus at low nanopore coverage" doi: https://doi.org/10.1101/2020.03.25.007146 for more information.
 
 
-\section{Installation}
+# Installation
 
+# How to use
 
-\section{How to use}
-
-\subsection{Before starting}
+## Before starting
 
 To use SINGLe you must have the following data:
-\begin{itemize}
-\item A fasta file with the reference sequence (ex. a wild type from which you generated the library) (\textbf{REF.fasta}).
-\item Nanopore reads of a reference sequence (\textbf{REF\_READS.fastq}).
-\item Nanopore reads of a gene libraries (\textbf{LIB\_READS.fastq}).
-\item Identification of each read in the gene library with a gene variant (ex via the use of DNA barcodes on your experiment) (\textbf{BC\_TABLE.txt}).
-\end{itemize}
-\subsection{Preprocessing data}
 
+- A fasta file with the reference sequence (ex. a wild type from which you generated the library) (__REF.fasta__).
+- Nanopore reads of a reference sequence (__REF_READS.fastq__).
+- Nanopore reads of a gene libraries (__LIB_READS.fastq__).
+- Identification of each read in the gene library with a gene variant (ex via the use of DNA barcodes on your experiment) (__BC_TABLE.txt__).
+
+## Preprocessing data
 
 Align nanopore reads to the reference sequence and create a sorted bam file.
 
 For the reads of the reference:
-\begin{lstlisting}
+```{bash, eval=F}
 minimap2 -ax map-ont --sam-hit-only REF.fasta REF_READS.fastq > REF_READS.sam
 samtools view -S -b REF_READS.sam > REF_READS.bam
 samtools sort REF_READS.bam -o REF_READS.sorted.bam
-\end{lstlisting}
+```
 
 And for the reads of the library:
-\begin{lstlisting}
+```{bash, eval=F}
 minimap2 -ax map-ont --sam-hit-only  REF.fasta LIB_READS.fastq >LIB_READS.sam
 samtools view -S -b LIB_READS.sam > LIB_READS.bam
 samtools sort LIB_READS.bam -o LIB_READS.sorted.bams
-\end{lstlisting}
+```
 
 
-
-\subsection{Run SINGLe in R}
+## Run SINGLe in R
 
 SINGLe consists on three steps: train model, evaluate model, compute consensus. As it can be time consuming, I will only analyze a subset of positions
-<<>>=
+```{r}
 library(single)
-#library(Biostrings)
 pos_start <- 1
 pos_end <- 10
 
 refseq_fasta <- system.file("extdata", "ref_seq.fasta", package = "single")
 ref_seq <- Biostrings::subseq(Biostrings::readDNAStringSet(refseq_fasta), pos_start,pos_end)
 
-@
+```
 
-The main flow of SINGLe is first to  train the model using nanopore reads of the reference (wild type).
-<<>>=
-train_reads_example <- system.file("extdata", "train_seqs_500.sorted.bam",
-                                   package = "single")
-train <- single_train(bamfile=train_reads_example,
+First, train the model using nanopore reads of the reference (wild type).
+```{r}
+REF_READS <- system.file("extdata", "train_seqs_500.sorted.bam",package = "single")
+train <- single_train(bamfile=REF_READS,
                       output="train",
                       refseq_fasta=refseq_fasta,
                       rates.matrix=mutation_rate,
@@ -104,14 +84,13 @@ train <- single_train(bamfile=train_reads_example,
                       save_partial=FALSE,
                       save_final= FALSE)
 print(head(train))
-@
+```
 
 
-Evaluate model: use the fitted model to evaluate the reads of your library, and re-weight the Qscores
-<<>>=
-test_reads_example <- system.file("extdata", "test_sequences.sorted.bam",
-                                 package = "single")
-corrected_reads <- single_evaluate(bamfile = test_reads_example,
+Second, evaluate model: use the fitted model to evaluate the reads of your library, and re-weight the QUAL (quality scores).
+```{r}
+LIB_READS<-system.file("extdata","test_sequences.sorted.bam",package ="single")
+corrected_reads <- single_evaluate(bamfile = LIB_READS,
                 single_fits = train,
                 ref_seq = ref_seq,
                 pos_start=pos_start,pos_end=pos_end,
@@ -119,88 +98,74 @@ corrected_reads <- single_evaluate(bamfile = test_reads_example,
                 gaps_weights = "minimum",
                 save = FALSE)
 corrected_reads
-@
+```
 
-Finally, you can use the reads of the library with the corrected QUAL scores to compute a weighted consensus sequences in subsets of reads, indicated in a table (with SeqID and BCid columns).
-<<>>=
-barcodes_table_example = system.file("extdata", "Barcodes_table.txt",
-                                     package = "single")
-consensus <- single_consensus_byBarcode(barcodes_file = barcodes_table_example,
+Finally, use the reads of the library with the corrected QUAL scores to compute a weighted consensus sequences in subsets of reads. The sets of reads corresponding to each variant are indicated in a table (here BC_TABLE) of two columns: SeqID (name of the read) and BCid (barcode or group identity).
+```{r}
+BC_TABLE = system.file("extdata", "Barcodes_table.txt",package = "single")
+consensus <- single_consensus_byBarcode(barcodes_file = BC_TABLE,
                            single_corrected_seqs = corrected_reads,
                            verbose = FALSE)
 consensus
-@
+```
 
 
-\subsection{Other functions included in the package}
+### Other functions included in the package
 
 Use pileup to create a data.frame with counts by position nucleotide and quality score
-<<>>=
-counts_pnq <- pileup_by_QUAL(bam_file=train_reads_example,
+```{r}
+counts_pnq <- pileup_by_QUAL(bam_file=REF_READS,
                     pos_start=pos_start,
                     pos_end=pos_end)
 head(counts_pnq)
-@
+```
 
 Compute a priori probability of making errors
-<<>>=
+```{r}
 p_prior_errors <- p_prior_errors(counts_pnq=counts_pnq,
                                   save=FALSE)
 p_prior_errors
-@
+```
 
 Compute a priori probability of having a mutation
-<<>>=
+```{r}
 p_prior_mutations <- p_prior_mutations(rates.matrix = mutation_rate,
-                        mean.n.mut = 5,
-                        ref_seq = ref_seq,
-                        save = FALSE)
+                        mean.n.mut = 5,ref_seq = ref_seq,save = FALSE)
 head(p_prior_mutations)
-@
+```
 
 Fit SINGLe logistic regression using the prior probabilities and the counts
-<<>>=
-fits <- fit_logregr(counts_pnq = counts_pnq,
-                    ref_seq=ref_seq,
+```{r}
+fits <- fit_logregr(counts_pnq = counts_pnq,ref_seq=ref_seq,
                     p_prior_errors = p_prior_errors,
                     p_prior_mutations = p_prior_mutations,
                     save=FALSE)
 head(fits)
-@
+```
 
 Use the fits to obtain the replacement Qscores after SINGLe fit, for all possible QUAL, nucleotide and position values
-<<>>=
-evaluated_fits <- evaluate_fits(pos_range = c(1,5),
-                                q_range = c(0,10),
-                                data_fits = fits,
-                                ref_seq = ref_seq,
-                                save=FALSE,
-                                verbose = FALSE)
+```{r}
+evaluated_fits <- evaluate_fits(pos_range = c(1,5),q_range = c(0,10),
+                                data_fits = fits,ref_seq = ref_seq,
+                                save=FALSE,verbose = FALSE)
 head(evaluated_fits)
-@
+```
 
 Compute one consensus sequence weighted by QUAL values.
-<<>>=
+```{r}
 data_barcode = data.frame(
-    nucleotide = unlist(sapply(as.character(corrected_reads),strsplit, split="")),
+    nucleotide=unlist(sapply(as.character(corrected_reads),strsplit, split="")),
     p_SINGLe=unlist(1-as(Biostrings::quality(corrected_reads),"NumericList")),
     pos=rep(1:Biostrings::width(corrected_reads[1]),length(corrected_reads)))
 weighted_consensus(df = data_barcode, cutoff_prob = 0.9)
 weighted_consensus(df = data_barcode, cutoff_prob = 0.999)
 
-@
+```
 
 
-\subsection{Session INFO}
-<<>>=
+
+# Session info {.unnumbered}
+
+```{r sessionInfo, echo=FALSE}
 sessionInfo()
-@
-
-
-
-
-
-
-
-
-\end{document}
+```
