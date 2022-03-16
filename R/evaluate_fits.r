@@ -15,10 +15,20 @@
 #' @importFrom Biostrings readDNAStringSet
 #' @export evaluate_fits
 #' @examples
-#' pos_range = seq_len(100)
-#' q_range = seq(1,50)
+#' train_reads_example <- system.file("extdata","train_seqs_500.sorted.bam",
+#'                                    package = "single")
 #' ref_seq_file = system.file("extdata", "ref_seq.fasta", package = "single")
 #' ref_seq = Biostrings::readDNAStringSet(ref_seq_file)
+#' counts_pnq <- pileup_by_QUAL(bam_file=train_reads_example,
+#'                  pos_start=1, pos_end=10)
+#' p_prior_errors <- p_prior_errors(counts_pnq=counts_pnq,save=FALSE)
+#' p_prior_mutations <- p_prior_mutations(rates.matrix = mutation_rate,
+#'                  mean.n.mut = 5,ref_seq = ref_seq,save = FALSE)
+#' fits <- fit_logregr(counts_pnq = counts_pnq,ref_seq=ref_seq,
+#'                  p_prior_errors = p_prior_errors,
+#'                  p_prior_mutations = p_prior_mutations,save=FALSE)
+#' pos_range = seq_len(100)
+#' q_range = seq(1,50)
 #' evaluated_fits <- evaluate_fits(pos_range = c(1,5),q_range = c(0,10),
 #'                      data_fits = fits,ref_seq = ref_seq)
 evaluate_fits <- function(pos_range,q_range,output_file, data_fits, ref_seq,
