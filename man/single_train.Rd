@@ -6,7 +6,7 @@
 \usage{
 single_train(
   bamfile,
-  output,
+  output = "results",
   refseq_fasta,
   rates.matrix = NULL,
   mean.n.mutations = NULL,
@@ -14,7 +14,7 @@ single_train(
   pos_end = NULL,
   verbose = TRUE,
   save_partial = FALSE,
-  save_final = TRUE
+  save_final = FALSE
 )
 }
 \arguments{
@@ -56,17 +56,12 @@ Before running single_train_function you have to align your INPUT data to a REFE
 \code{samtools mpileup -Q 0 ALIGNMENT.sorted.bam > COUNTS.txt}
 }
 \examples{
-pos_start<-1
-pos_end<- 10
 refseq_fasta<- system.file("extdata", "ref_seq.fasta", package = "single")
 train_reads_example <- system.file("extdata", "train_seqs_500.sorted.bam",
                                    package = "single")
 train <- single_train(bamfile=train_reads_example,
                    refseq_fasta=refseq_fasta,
-                   rates.matrix=mutation_rate,
-                   mean.n.mutations=5.4,
-                   pos_start=pos_start,
-                   pos_end=pos_end,
-                   save_final= FALSE)
+                   rates.matrix=mutation_rate,mean.n.mutations=5.4,
+                   pos_start=1,pos_end=10)
 print(head(train))
 }

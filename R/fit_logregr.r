@@ -18,20 +18,17 @@
 #' @importFrom utils txtProgressBar setTxtProgressBar
 #' @export fit_logregr
 #' @examples
-#' pos_start <- 1
-#' pos_end <- 10
 #' refseq_fasta <- system.file("extdata", "ref_seq.fasta", package = "single")
+#' ref_seq = Biostrings::readDNAStringSet(refseq_fasta)
 #' train_reads_example <- system.file("extdata", "train_seqs_500.sorted.bam",
 #'                                    package = "single")
 #' counts_pnq <- pileup_by_QUAL(bam_file=train_reads_example,
-#'     pos_start=pos_start,pos_end=pos_end)
+#'     pos_start=1,pos_end=10)
 #' p_prior_mutations <- p_prior_mutations(rates.matrix = mutation_rate,
-#'     mean.n.mut = 5,ref_seq = ref_seq,save = FALSE)
-#' p_prior_errors <- p_prior_errors(counts_pnq=counts_pnq,save=FALSE)
+#'     mean.n.mut = 5,ref_seq = ref_seq)
+#' p_prior_errors <- p_prior_errors(counts_pnq=counts_pnq)
 #' fits <- fit_logregr(counts_pnq = counts_pnq,ref_seq=ref_seq,
-#'     p_prior_errors = p_prior_errors,p_prior_mutations = p_prior_mutations,
-#'     save=FALSE)
-#' head(fits)
+#'     p_prior_errors = p_prior_errors,p_prior_mutations = p_prior_mutations)
 fit_logregr <- function(counts_pnq,ref_seq,p_prior_errors,p_prior_mutations,
                 save=FALSE, output_file_fits,output_file_data,verbose=FALSE){
 

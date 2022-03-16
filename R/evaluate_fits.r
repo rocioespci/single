@@ -17,16 +17,16 @@
 #' @examples
 #' train_reads_example <- system.file("extdata","train_seqs_500.sorted.bam",
 #'                                    package = "single")
-#' ref_seq_file = system.file("extdata", "ref_seq.fasta", package = "single")
-#' ref_seq = Biostrings::readDNAStringSet(ref_seq_file)
+#' refseq_fasta = system.file("extdata", "ref_seq.fasta", package = "single")
+#' ref_seq = Biostrings::readDNAStringSet(refseq_fasta)
 #' counts_pnq <- pileup_by_QUAL(bam_file=train_reads_example,
 #'                  pos_start=1, pos_end=10)
-#' p_prior_errors <- p_prior_errors(counts_pnq=counts_pnq,save=FALSE)
+#' p_prior_errors <- p_prior_errors(counts_pnq=counts_pnq)
 #' p_prior_mutations <- p_prior_mutations(rates.matrix = mutation_rate,
-#'                  mean.n.mut = 5,ref_seq = ref_seq,save = FALSE)
+#'                  mean.n.mut = 5,ref_seq = ref_seq)
 #' fits <- fit_logregr(counts_pnq = counts_pnq,ref_seq=ref_seq,
 #'                  p_prior_errors = p_prior_errors,
-#'                  p_prior_mutations = p_prior_mutations,save=FALSE)
+#'                  p_prior_mutations = p_prior_mutations)
 #' pos_range = seq_len(100)
 #' q_range = seq(1,50)
 #' evaluated_fits <- evaluate_fits(pos_range = c(1,5),q_range = c(0,10),
@@ -48,7 +48,7 @@ evaluate_fits <- function(pos_range,q_range,output_file, data_fits, ref_seq,
 
     df <- dplyr::left_join(df,data_fits,
                                     by=c("pos","nucleotide","strand"))
-    if(verbose){p =utils::txtProgressBar(min =0,max=nrow(df),style = 3)}
+    if(verbose){pb=utils::txtProgressBar(min =0,max=nrow(df),style = 3)}
     for(i in seq_len(nrow(df))){
         if(verbose){utils::setTxtProgressBar(pb,i)}
         # if it is a wild type, skip

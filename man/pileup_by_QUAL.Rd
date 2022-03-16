@@ -27,12 +27,10 @@ data.frame with columns strand,pos,nucleotide,QUAL,countss
 To explain
 }
 \examples{
-pos_start <- 1
-pos_end <- 10
 refseq_fasta <- system.file("extdata", "ref_seq.fasta", package = "single")
 train_reads_example <- system.file("extdata", "train_seqs_500.sorted.bam",
                                    package = "single")
 counts_pnq <- pileup_by_QUAL(bam_file=train_reads_example,
-    pos_start=pos_start,pos_end=pos_end)
+    pos_start=1,pos_end=10)
 head(counts_pnq)
 }

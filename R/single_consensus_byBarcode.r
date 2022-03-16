@@ -11,30 +11,23 @@
 #' @import dplyr
 #' @importFrom rlang .data
 #' @importFrom utils read.table
+#' @importFrom methods as
 #' @importFrom Biostrings DNAStringSet readQualityScaledDNAStringSet quality readDNAStringSet
 #' @export single_consensus_byBarcode
 #' @examples
-#' pos_start=1
-#' pos_end = 10
 #' refseq_fasta = system.file("extdata", "ref_seq.fasta", package = "single")
-#' ref_seq <- subseq(Biostrings::readDNAStringSet(refseq_fasta), pos_start,pos_end)
+#' ref_seq <- Biostrings::subseq(Biostrings::readDNAStringSet(refseq_fasta), 1,10)
 #' train_reads_example <- system.file("extdata", "train_seqs_500.sorted.bam",
 #'                                    package = "single")
 #' train <- single_train(bamfile=train_reads_example,
 #'                    refseq_fasta=refseq_fasta,
-#'                    rates.matrix=mutation_rate,
-#'                    mean.n.mutations=5.4,
-#'                    pos_start=pos_start,
-#'                    pos_end=pos_end,
-#'                    save_final= FALSE)
+#'                    rates.matrix=mutation_rate,mean.n.mutations=5.4,
+#'                    pos_start=1,pos_end=10)
 #' test_reads_example = system.file("extdata", "test_sequences.sorted.bam",
 #'    package = "single")
 #' corrected_reads <- single_evaluate(bamfile = test_reads_example,
-#'                  single_fits = train,
-#'                  ref_seq = ref_seq,
-#'                  pos_start=pos_start,
-#'                  pos_end=pos_end,
-#'                  gaps_weights = "minimum")
+#'                  single_fits = train,ref_seq = ref_seq,
+#'                  pos_start=1,pos_end=10,gaps_weights = "minimum")
 #' barcodes_table_example = system.file("extdata", "Barcodes_table.txt",
 #'    package = "single")
 #' consensus <- single_consensus_byBarcode(

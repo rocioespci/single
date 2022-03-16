@@ -6,15 +6,23 @@
 #' @return Character vector, consensus sequence
 #' @importFrom rlang .data
 #' @importFrom dplyr %>% select rename
-#' @importFrom Biostrings DNAString
+#' @importFrom Biostrings DNAString readQualityScaledDNAStringSet quality width
+#' @importFrom methods as
 #' @export weighted_consensus
 #' @examples
+#' fastq_seqs_example <- system.file("extdata", "test_sequences.fastq",package = "single")
+#' seqs_example <- Biostrings::readQualityScaledDNAStringSet(fastq_seqs_example)
+#' # Using single weights
 #' data_barcode = data.frame(
-#'  nucleotide = unlist(sapply(as.character(corrected_reads),strsplit, split="")),
-#'  p_SINGLe=unlist(1-as(quality(corrected_reads),"NumericList")),
-#'  pos=rep(1:width(corrected_reads[1]),length(corrected_reads)))
+#'  nucleotide = unlist(sapply(as.character(seqs_example),strsplit, split="")),
+#'  p_SINGLe=unlist(1-as(Biostrings::quality(seqs_example),"NumericList")),
+#'  pos=rep(1:Biostrings::width(seqs_example[1]),length(seqs_example)))
 #' weighted_consensus(df = data_barcode, cutoff_prob = 0.9)
-#' weighted_consensus(df = data_barcode, cutoff_prob = 0.999)
+#' # Replacing weights by ones
+#' data_barcode = data.frame(
+#'  nucleotide = unlist(sapply(as.character(seqs_example),strsplit, split="")),
+#'  p_SINGLe=1,pos=rep(1,sum(Biostrings::width(seqs_example))))
+#' weighted_consensus(df = data_barcode, cutoff_prob = 0)
 weighted_consensus       <- function(df,cutoff_prob=0.2){
     if(cutoff_prob>1 | cutoff_prob<0){stop('cutoff must be between 0 and 1')}
 

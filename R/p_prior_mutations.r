@@ -9,20 +9,17 @@
 #' @return Data frame with columns wt.base (wild type nucleotide), nucleotide (mutated nucleotide), p_mutation (probaility of mutation)
 #' @importFrom reshape2 melt
 #' @importFrom utils write.table
-#' @importFrom Biostrings oligonucleotideFrequency
+#' @importFrom Biostrings oligonucleotideFrequency subseq readDNAStringSet
 #' @export p_prior_mutations
 #' @examples
-#' pos_start <- 1
-#' pos_end <- 10
 #' refseq_fasta <- system.file("extdata", "ref_seq.fasta", package = "single")
+#' ref_seq <- Biostrings::subseq(Biostrings::readDNAStringSet(refseq_fasta), 1,10)
 #' train_reads_example <- system.file("extdata", "train_seqs_500.sorted.bam",
 #'                                    package = "single")
-#' counts_pnq <- pileup_by_QUAL(bam_file=train_reads_example,
-#'     pos_start=pos_start,pos_end=pos_end)
+#' counts_pnq <- pileup_by_QUAL(train_reads_example,pos_start=1,pos_end=10)
 #' p_prior_mutations <- p_prior_mutations(rates.matrix = mutation_rate,
-#'     mean.n.mut = 5,ref_seq = ref_seq,save = FALSE)
+#'     mean.n.mut = 5,ref_seq = ref_seq)
 #' head(p_prior_mutations)
-
 p_prior_mutations      <- function(rates.matrix, mean.n.mut, ref_seq,
                             save=FALSE, output_file="tablePriorMutations.txt"){
     composition_wt <- c(Biostrings::oligonucleotideFrequency(ref_seq,1),

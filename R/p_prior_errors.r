@@ -10,14 +10,12 @@
 #' @import dplyr
 #' @export p_prior_errors
 #' @examples
-#' pos_start <- 1
-#' pos_end <- 10
 #' refseq_fasta <- system.file("extdata", "ref_seq.fasta", package = "single")
 #' train_reads_example <- system.file("extdata", "train_seqs_500.sorted.bam",
 #'                                    package = "single")
 #' counts_pnq <- pileup_by_QUAL(bam_file=train_reads_example,
-#'     pos_start=pos_start,pos_end=pos_end)
-#' p_prior_errors <- p_prior_errors(counts_pnq=counts_pnq,save=FALSE)
+#'     pos_start=1,pos_end=10)
+#' p_prior_errors <- p_prior_errors(counts_pnq=counts_pnq)
 #' head(p_prior_errors)
 p_prior_errors         <- function(counts_pnq,output_file=NULL, save=FALSE){
     prior_error <- counts_pnq %>%
