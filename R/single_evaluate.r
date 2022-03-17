@@ -36,6 +36,7 @@
 #' @importFrom Biostrings QualityScaledDNAStringSet writeQualityScaledXStringSet PhredQuality readDNAStringSet vmatchPattern replaceAt extractAt compareStrings width
 #' @importFrom dplyr %>% left_join select
 #' @importFrom IRanges IRanges
+#' @importFrom utils txtProgressBar setTxtProgressBar
 #' @importFrom stringr str_locate_all
 #' @importFrom Rsamtools BamFile scanBam
 #' @importFrom GenomicAlignments sequenceLayer
@@ -67,6 +68,9 @@ single_evaluate <- function(bamfile, single_fits,
 
     bf <- Rsamtools::BamFile(bamfile)
     reads <- Rsamtools::scanBam(bf)
+    #keep sequences that start at least at pos_start
+    index <- which(reads[[1]]$pos<=pos_start)
+    reads[[1]] <- sapply(reads[[1]], function(x){x[index]})
 
     reads_aligned <- GenomicAlignments::sequenceLayer(reads[[1]]$seq,
                                 reads[[1]]$cigar,to = "reference")
@@ -81,11 +85,14 @@ single_evaluate <- function(bamfile, single_fits,
         reads_aligned[i] <- paste0(as.character(reads_aligned[i]), paste0(rep("-", pos_end-width(reads_aligned[i])),collapse = ""),collapse = "")
         scores_aligned[i] <- paste0(as.character(scores_aligned[i]), paste0(rep("-", pos_end-width(scores_aligned[i])),collapse = ""),collapse = "")
     }
-    reads_aligned <- subseq(reads_aligned, pos_start,pos_end)
-    scores_aligned <- subseq(scores_aligned, pos_start,pos_end)
+    reads_aligned <- subseq(reads_aligned, start=pos_start+1-reads[[1]]$pos,end=pos_end+1-reads[[1]]$pos)
+    scores_aligned <- subseq(scores_aligned, start=pos_start+1-reads[[1]]$pos,end=pos_end+1-reads[[1]]$pos)
     # Replace deletions score's values
-    for(i in seq(length(reads_aligned))){
+    if(verbose){cat("Assign values to deletions\n")}
+    if(verbose){pb=utils::txtProgressBar(min =0,max=length(reads_aligned),style = 3)}
 
+    for(i in seq(length(reads_aligned))){
+        if(verbose){utils::setTxtProgressBar(pb,i)}
         ## REPLACE DELETION SCORES
         del_positions <- BiocGenerics::start(Biostrings::vmatchPattern("-",reads_aligned[i])[[1]])
         ndel = length(del_positions)
@@ -147,8 +154,10 @@ single_evaluate <- function(bamfile, single_fits,
         }
 
     }
-
+    if(verbose){cat("Correct QUAL values\n")}
+    if(verbose){pb=utils::txtProgressBar(min =0,max=length(reads_aligned),style = 3)}
     for(i in seq(length(reads_aligned))){
+        if(verbose){utils::setTxtProgressBar(pb,i)}
         mismatches <- compareStrings(ref_seq,reads_aligned[i])
         mismatches_positions <- stringr::str_locate_all(mismatches, pattern="\\+|\\?|\\-")
         if(nrow(mismatches_positions[[1]])==0){next()}
