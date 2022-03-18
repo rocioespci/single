@@ -2,10 +2,10 @@
 #'
 #' Main function to compute consensus after correcting reads by a SINGLE model.
 #'
-#' @param barcodes_file File containing the names of the reads and the barcode associated (or any grouping tag).
-#' @param single_corrected_seqs Files containing the sequences corrected by SINGLE, i.e. saved by single_evaluate
-#' @param column_SeqID,column_BCid Numeric. Columns where the sequences id and the barcode (or grouping tag) are, in the barcodes_file
-#' @param header,dec,sep  Arguments for read.table(barcodes_file)
+#' @param barcodes_table data.frame or file name containing the names of the reads and the barcode associated (or any grouping tag).
+#' @param sequences QualityScaledDNAStringSet or fastq file name. Contains sequences from which compute weighted consensus.
+#' @param readID_col,bcID_col Numeric. Columns where the reads id and the barcode (or grouping tag) are, in the barcodes_table
+#' @param header,dec,sep  Arguments for read.table(barcodes_table)
 #' @param verbose Logical.
 #' @return DNAStringSet with consensus sequences
 #' @import dplyr
@@ -25,39 +25,38 @@
 #'                  pos_start=1,pos_end=10,gaps_weights = "minimum")
 #' barcodes = system.file("extdata", "Barcodes_table.txt",package = "single")
 #' consensus <- single_consensus_byBarcode(
-#'                  barcodes_file = barcodes,
-#'                  single_corrected_seqs = corrected_reads,
+#'                  barcodes_table = barcodes,
+#'                  sequences = corrected_reads,
 #'                  verbose = FALSE)
-single_consensus_byBarcode <- function(barcodes_file,
-                                single_corrected_seqs,
-                                column_SeqID=NULL,
-                                column_BCid=NULL,
+single_consensus_byBarcode <- function(barcodes_table,sequences,
+                                readID_col=1,bcID_col=2,
                                 header=TRUE, dec=".",sep=" ", verbose=TRUE){
-    bc_table <- utils::read.table(barcodes_file,header=header, dec=dec,sep=sep)
-    if( (is.null(column_BCid) & !is.null(column_SeqID))){
-        stop('single_consensus_byBarcode: you need to specify column_BCid')
+    if(is.character(barcodes_table)){
+        barcodes_table <- utils::read.table(barcodes_table,
+                                     header=header,dec=dec,sep=sep)
     }
-    if( (!is.null(column_BCid) & is.null(column_SeqID))){
-        stop('single_consensus_byBarcode: you need to specify column_SeqID')
-    }
-    if(!is.null(column_BCid) | !is.null(column_SeqID)){
-        bc_table <- bc_table[,c(column_SeqID,column_BCid)]
-    }
-    colnames(bc_table) <- c("SeqID","BCid")
+    barcodes_table  <- barcodes_table[,c(readID_col,bcID_col)]
+    colnames(barcodes_table) <- c("readID","bcID")
 
-    if(is.character(single_corrected_seqs)){
-        single_corrected_seqs <- readQualityScaledDNAStringSet(single_corrected_seqs)
+    if(is.character(sequences)){
+        sequences <- readQualityScaledDNAStringSet(sequences)
     }
-    barcodes = unique(bc_table$BCid)
+    #Intersect sequences both in sequences and barcodes_table
+    intersection_names <- intersect(barcodes_table$readID,names(sequences))
+    barcodes_table <- barcodes_table %>% filter(readID %in% intersection_names)
+    sequences <- sequences[intersection_names]
 
-    #Compute consensus for each barcode using all sequences available and using the three available methods
+    #Compute consensus for each barcode
+    barcodes <- unique(barcodes_table$bcID)
     consensus_sequences <- DNAStringSet()
     if(verbose){ pb <- utils::txtProgressBar(0,length(barcodes),style=3) }
     for(bc in seq_along(barcodes)){
-        bc_table_aux <- bc_table %>%
-            filter(BCid==barcodes[bc])
-        index <- which(names(single_corrected_seqs) %in% bc_table_aux$SeqID)
-        seqs_in_barcode <- single_corrected_seqs[index]
+        bc_table_aux <- barcodes_table %>%
+            filter(bcID==barcodes[bc])
+        if(nrow(bc_table_aux)==1){
+            consensus_sequences[[bc]] <- sequences[bc_table_aux$readID][[1]]
+        }
+        seqs_in_barcode <- sequences[bc_table_aux$readID]
         aux_seqs <- sapply(as.character(seqs_in_barcode),strsplit, split="")
         aux_quals <- 1-as(quality(seqs_in_barcode),"NumericList")
         aux_pos <- lapply(aux_seqs, seq_along)

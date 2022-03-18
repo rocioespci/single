@@ -89,7 +89,7 @@ print(head(train))
 
 Second, evaluate model: use the fitted model to evaluate the reads of your library, and re-weight the QUAL (quality scores).
 ```{r}
-LIB_READS<-system.file("extdata","test_sequences.sorted.bam",package ="single")
+LIB_READS <- system.file("extdata","test_sequences.sorted.bam",package ="single")
 corrected_reads <- single_evaluate(bamfile = LIB_READS,
                 single_fits = train,
                 ref_seq = ref_seq,
@@ -103,8 +103,8 @@ corrected_reads
 Finally, use the reads of the library with the corrected QUAL scores to compute a weighted consensus sequences in subsets of reads. The sets of reads corresponding to each variant are indicated in a table (here BC_TABLE) of two columns: SeqID (name of the read) and BCid (barcode or group identity).
 ```{r}
 BC_TABLE = system.file("extdata", "Barcodes_table.txt",package = "single")
-consensus <- single_consensus_byBarcode(barcodes_file = BC_TABLE,
-                           single_corrected_seqs = corrected_reads,
+consensus <- single_consensus_byBarcode(barcodes_table = BC_TABLE,
+                           sequences = corrected_reads,
                            verbose = FALSE)
 consensus
 ```
@@ -157,9 +157,11 @@ data_barcode = data.frame(
     nucleotide=unlist(sapply(as.character(corrected_reads),strsplit, split="")),
     p_SINGLe=unlist(1-as(Biostrings::quality(corrected_reads),"NumericList")),
     pos=rep(1:Biostrings::width(corrected_reads[1]),length(corrected_reads)))
-weighted_consensus(df = data_barcode, cutoff_prob = 0.9)
-weighted_consensus(df = data_barcode, cutoff_prob = 0.999)
-
+consensus_seq <- weighted_consensus(df = data_barcode, cutoff_prob = 0.9)
+consensus_seq
+another_consensus_seq <- weighted_consensus(df = data_barcode, cutoff_prob = 0.999)
+another_consensus_seq
+list_mismatches(ref_seq[[1]],another_consensus_seq)
 ```
 
 

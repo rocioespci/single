@@ -62,6 +62,7 @@ weighted_consensus       <- function(df,cutoff_prob=0.2){
             dplyr::arrange(.data$pos)
     }
 
+    df.counts$nucleotide[is.na(df.counts$nucleotide)] <- "-"
     # return(as.character(df.counts$nucleotide))
     return(Biostrings::DNAString(paste0(df.counts$nucleotide, collapse = "")))
 }

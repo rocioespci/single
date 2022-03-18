@@ -5,10 +5,10 @@
 \title{Compute SINGLE consensus}
 \usage{
 single_consensus_byBarcode(
-  barcodes_file,
-  single_corrected_seqs,
-  column_SeqID = NULL,
-  column_BCid = NULL,
+  barcodes_table,
+  sequences,
+  readID_col = 1,
+  bcID_col = 2,
   header = TRUE,
   dec = ".",
   sep = " ",
@@ -16,13 +16,13 @@ single_consensus_byBarcode(
 )
 }
 \arguments{
-\item{barcodes_file}{File containing the names of the reads and the barcode associated (or any grouping tag).}
+\item{barcodes_table}{data.frame or file name containing the names of the reads and the barcode associated (or any grouping tag).}
 
-\item{single_corrected_seqs}{Files containing the sequences corrected by SINGLE, i.e. saved by single_evaluate}
+\item{sequences}{QualityScaledDNAStringSet or fastq file name. Contains sequences from which compute weighted consensus.}
 
-\item{column_SeqID, column_BCid}{Numeric. Columns where the sequences id and the barcode (or grouping tag) are, in the barcodes_file}
+\item{readID_col, bcID_col}{Numeric. Columns where the reads id and the barcode (or grouping tag) are, in the barcodes_table}
 
-\item{header, dec, sep}{Arguments for read.table(barcodes_file)}
+\item{header, dec, sep}{Arguments for read.table(barcodes_table)}
 
 \item{verbose}{Logical.}
 }
@@ -43,7 +43,7 @@ corrected_reads <- single_evaluate(bamfile = lib_example,
                  pos_start=1,pos_end=10,gaps_weights = "minimum")
 barcodes = system.file("extdata", "Barcodes_table.txt",package = "single")
 consensus <- single_consensus_byBarcode(
-                 barcodes_file = barcodes,
-                 single_corrected_seqs = corrected_reads,
+                 barcodes_table = barcodes,
+                 sequences = corrected_reads,
                  verbose = FALSE)
 }

@@ -154,7 +154,7 @@ single_evaluate <- function(bamfile, single_fits,
         }
 
     }
-    if(verbose){cat("Correct QUAL values\n")}
+    if(verbose){cat("\nCorrect QUAL values\n")}
     if(verbose){pb=utils::txtProgressBar(min =0,max=length(reads_aligned),style = 3)}
     for(i in seq(length(reads_aligned))){
         if(verbose){utils::setTxtProgressBar(pb,i)}
@@ -178,7 +178,7 @@ single_evaluate <- function(bamfile, single_fits,
             mismatches_positions_Ir <- mismatches_positions_Ir[!na_single]
         }
 
-        singleQUAL <- sapply(mismatches_df$p_SINGLe,PhredQuality)
+        singleQUAL <- sapply(1-mismatches_df$p_SINGLe,PhredQuality)
         for(p in seq_along(mismatches_positions_Ir)){
             scores_aligned[i] <- replaceAt(scores_aligned[i],mismatches_positions_Ir[p], singleQUAL[[p]])
         }
