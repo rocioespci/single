@@ -28,12 +28,12 @@ For more details, please refer to our pre-print "Accurate gene consensus at low 
 # Installation
 
 Using bioconductor:
-```{r}
+
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
 BiocManager::install("single")
-```
+
 
 # How to use
 
