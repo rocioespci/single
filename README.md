@@ -2,11 +2,19 @@
 SNIPs In Nanopore reads of Gene Libraries
 
 ## Installation
-The easiest way to install this package is to run in an R console:
+
+From bioconductor, run in an R console:
+
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("single")
+
+
+Or from git-hub, run in an R console:
 require(devtools)
 install_github("rocioespci/single")
 
-You can also download it as a /tar and run, inside R, install.package("path_to_file/single.tar.gz", repos=NULL)
 
 ## Run
 

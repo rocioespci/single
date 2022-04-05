@@ -88,7 +88,7 @@ single_evaluate <- function(bamfile, single_fits,
     reads_aligned <- subseq(reads_aligned, start=pos_start+1-reads[[1]]$pos,end=pos_end+1-reads[[1]]$pos)
     scores_aligned <- subseq(scores_aligned, start=pos_start+1-reads[[1]]$pos,end=pos_end+1-reads[[1]]$pos)
     # Replace deletions score's values
-    if(verbose){cat("Assign values to deletions\n")}
+    if(verbose){message("Assign values to deletions\n")}
     if(verbose){pb=utils::txtProgressBar(min =0,max=length(reads_aligned),style = 3)}
 
     for(i in seq(length(reads_aligned))){
@@ -154,7 +154,7 @@ single_evaluate <- function(bamfile, single_fits,
         }
 
     }
-    if(verbose){cat("\nCorrect QUAL values\n")}
+    if(verbose){message("\nCorrect QUAL values\n")}
     if(verbose){pb=utils::txtProgressBar(min =0,max=length(reads_aligned),style = 3)}
     for(i in seq(length(reads_aligned))){
         if(verbose){utils::setTxtProgressBar(pb,i)}

@@ -73,23 +73,23 @@ single_train    <- function(bamfile,
     outfile_data            <- paste0(output,"_SINGLe_data.txt")
     outfile_evaluation      <- paste0(output,"_SINGLe_results.txt")
 
-    if(verbose){cat("single_train\n")}
+    if(verbose){message("single_train\n")}
 
     ### Parse counts of nucleotide per position and qscore
-    if(verbose){cat("\t pileup by quality score \n")}
+    if(verbose){message("\t pileup by quality score \n")}
 
     counts_pnq <- pileup_by_QUAL(bam_file=bamfile,
                     pos_start=pos_start,
                     pos_end=pos_end)
 
     # Calculate priors errors
-    if(verbose){cat("\t p_prior-error \n")}
+    if(verbose){message("\t p_prior-error \n")}
     p_prior_errors <- p_prior_errors(counts_pnq=counts_pnq,
                         output_file=outfile_prior_errors,
                         save=save_partial)
 
     ## Compute information of priors probabilities
-    if(verbose){cat("\t p_prior-right\n")}
+    if(verbose){message("\t p_prior-right\n")}
     p_prior_mutations   <- p_prior_mutations(rates.matrix = rates.matrix,
                             mean.n.mut = mean.n.mutations,
                             ref_seq = ref_seq,
@@ -97,7 +97,7 @@ single_train    <- function(bamfile,
                             output_file=outfile_prior_mutations)
 
     #Fit wt
-    if(verbose){cat("\t Fitting\n")}
+    if(verbose){message("\t Fitting\n")}
     fits <- fit_logregr(counts_pnq = counts_pnq,
                         ref_seq=ref_seq,
                         p_prior_errors = p_prior_errors,
@@ -107,7 +107,7 @@ single_train    <- function(bamfile,
                         output_file_data=outfile_data,
                         verbose = verbose)
 
-    if(verbose){cat("\t Evaluating \n")}
+    if(verbose){message("\t Evaluating \n")}
     evaluated_fits <- evaluate_fits(pos_range = c(1,pos_end-pos_start+1),
                         q_range = c(1,50),
                         output_file = outfile_evaluation,

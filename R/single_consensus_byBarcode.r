@@ -49,6 +49,7 @@ single_consensus_byBarcode <- function(barcodes_table,sequences,
     #Compute consensus for each barcode
     barcodes <- unique(barcodes_table$bcID)
     consensus_sequences <- DNAStringSet()
+    names_barcodes <- rep(NA,length(barcodes))
     if(verbose){ pb <- utils::txtProgressBar(0,length(barcodes),style=3) }
     for(bc in seq_along(barcodes)){
         bc_table_aux <- barcodes_table %>%
@@ -65,8 +66,10 @@ single_consensus_byBarcode <- function(barcodes_table,sequences,
                                     pos=unlist(aux_pos) )
         rownames(data_barcode) <- NULL
         consensus_sequences[[bc]] <- weighted_consensus(df = data_barcode, cutoff_prob = 0)
+        names_barcodes[bc] <- barcodes[bc]
         if(verbose){utils::setTxtProgressBar(pb,bc)}
     }
+    names(consensus_sequences) <- names_barcodes
     return(consensus_sequences)
 }
 

@@ -95,7 +95,7 @@ fit_logregr <- function(counts_pnq,ref_seq,p_prior_errors,p_prior_mutations,
         dplyr::arrange(.data$strand,.data$pos, .data$nucleotide)%>%
         dplyr::mutate(prior_slope=NA, prior_intercept=NA)
     n_i <- nrow(data_fits)
-    if(verbose){cat("\n Fitting \n")}
+    if(verbose){message("\n Fitting \n")}
     if(verbose){pb=utils::txtProgressBar(min=0,max=nrow(data_fits),style = 3)}
     for (i in seq_len(nrow(data_fits))){
         if(verbose){utils::setTxtProgressBar(pb,i)}
