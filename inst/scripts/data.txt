@@ -1,0 +1,14 @@
+Data in inst/extdata/:
+
+- Experimental data, DNA strands measured by Oxford Nanopore sequencer, and derivatives: 
+ 	. test_sequences.fastq: sequenced DNA strands.
+ 	. test_sequences.sorted.bam: aligned DNA sequences (pre-processed with samtools)
+	. train_seqs_500.sorted.bam: aligned DNA sequences (pre-processed with samtools)
+	. Barcodes_table.txt: table indicating name of sequence and barcode.
+- Experimental data, DNA sequence obtained by Sanger sequencing (fragment):
+	. ref_seq.fasta (DNA sequence of KlenTaq polymerase gene).
+- Pre-processed data (script in inst/scripts/)
+	. fits_example.txt
+	. train_example.txt
+
+Note: You can think of the experimental data as simulated data.
