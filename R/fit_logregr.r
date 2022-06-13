@@ -30,7 +30,8 @@
 #' fits <- fit_logregr(counts_pnq = counts_pnq,ref_seq=ref_seq,
 #'     p_prior_errors = p_prior_errors,p_prior_mutations = p_prior_mutations)
 fit_logregr <- function(counts_pnq,ref_seq,p_prior_errors,p_prior_mutations,
-                save=FALSE, output_file_fits,output_file_data,verbose=FALSE){
+                save=FALSE, output_file_fits,output_file_data,verbose=FALSE,
+                keep_fit_quality=FALSE){
 
     #Pre-editing data
     ref_seq_char = strsplit(as.character(ref_seq),"")[[1]]
@@ -94,6 +95,10 @@ fit_logregr <- function(counts_pnq,ref_seq,p_prior_errors,p_prior_mutations,
         dplyr::distinct(.data$strand,.data$pos, .data$nucleotide)%>%
         dplyr::arrange(.data$strand,.data$pos, .data$nucleotide)%>%
         dplyr::mutate(prior_slope=NA, prior_intercept=NA)
+    if(keep_fit_quality){
+        data_fits <- data_fits %>%
+            dplyr::mutate(slope_pval=NA, intercept_pval=NA)
+    }
     n_i <- nrow(data_fits)
     if(verbose){message("\n Fitting \n")}
     if(verbose){pb=utils::txtProgressBar(min=0,max=nrow(data_fits),style = 3)}
@@ -124,8 +129,14 @@ fit_logregr <- function(counts_pnq,ref_seq,p_prior_errors,p_prior_mutations,
             aux_prior_coefficients       <- stats::coefficients(aux_prior_fit)
             data_fits$prior_slope[i]     <- aux_prior_coefficients[2]
             data_fits$prior_intercept[i] <- aux_prior_coefficients[1]
+            if(keep_fit_quality){
+                fit_summ <- summary(aux_prior_fit)$coefficients
+                data_fits$slope_pval <- fit_summ[2,4]
+                data_fits$intercept_pval <- fit_summ[1,4]
+            }
         }
     }
+
     # SAVE RESULTS
     if(save){
         utils::write.table(data_fits, file=output_file_fits,
