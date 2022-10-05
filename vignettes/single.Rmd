@@ -51,14 +51,14 @@ To use SINGLe you must have the following data:
 Align nanopore reads to the reference sequence and create a sorted bam file.
 
 For the reads of the reference:
-```{bash, eval=F}
+```{bash, eval=FALSE}
 minimap2 -ax map-ont --sam-hit-only REF.fasta REF_READS.fastq > REF_READS.sam
 samtools view -S -b REF_READS.sam > REF_READS.bam
 samtools sort REF_READS.bam -o REF_READS.sorted.bam
 ```
 
 And for the reads of the library:
-```{bash, eval=F}
+```{bash, eval=FALSE}
 minimap2 -ax map-ont --sam-hit-only  REF.fasta LIB_READS.fastq >LIB_READS.sam
 samtools view -S -b LIB_READS.sam > LIB_READS.bam
 samtools sort LIB_READS.bam -o LIB_READS.sorted.bams
@@ -71,7 +71,7 @@ SINGLe consists on three steps: train model, evaluate model, compute consensus. 
 ```{r}
 library(single)
 pos_start <- 1
-pos_end <- 10
+pos_end <- 100
 
 refseq_fasta <- system.file("extdata", "ref_seq.fasta", package = "single")
 ref_seq <- Biostrings::subseq(Biostrings::readDNAStringSet(refseq_fasta), pos_start,pos_end)
@@ -100,17 +100,18 @@ Second, evaluate model: use the fitted model to evaluate the reads of your libra
 LIB_READS <- system.file("extdata","test_sequences.sorted.bam",package ="single")
 corrected_reads <- single_evaluate(bamfile = LIB_READS,
                 single_fits = train,
-                ref_seq = ref_seq,
+                refseq_fasta=refseq_fasta,
                 pos_start=pos_start,pos_end=pos_end,
                 verbose=FALSE,
                 gaps_weights = "minimum",
-                save = FALSE)
+                save = FALSE,
+                save_original_scores = FALSE)
 corrected_reads
 ```
 
 Finally, use the reads of the library with the corrected QUAL scores to compute a weighted consensus sequences in subsets of reads. The sets of reads corresponding to each variant are indicated in a table (here BC_TABLE) of two columns: SeqID (name of the read) and BCid (barcode or group identity).
 ```{r}
-BC_TABLE = system.file("extdata", "Barcodes_table.txt",package = "single")
+BC_TABLE <- system.file("extdata", "Barcodes_table.txt",package = "single")
 consensus <- single_consensus_byBarcode(barcodes_table = BC_TABLE,
                            sequences = corrected_reads,
                            verbose = FALSE)
@@ -161,7 +162,7 @@ head(evaluated_fits)
 
 Compute one consensus sequence weighted by QUAL values.
 ```{r}
-data_barcode = data.frame(
+data_barcode <- data.frame(
     nucleotide=unlist(sapply(as.character(corrected_reads),strsplit, split="")),
     p_SINGLe=unlist(1-as(Biostrings::quality(corrected_reads),"NumericList")),
     pos=rep(1:Biostrings::width(corrected_reads[1]),length(corrected_reads)))

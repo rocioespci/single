@@ -1,25 +1,25 @@
 ---
 title: "Accurate gene consensus at low nanopore coverage"
-author: "Rocio ESPADA"
+author:
+- name: Rocio Espada
+  affiliation: ESPCI Paris
+package: single
 output:
-    html_document:
-        toc: true
-        toc_float: false
-        number_sections: true
-        css: my_style_01.css
-        code_folding: hide
+  BiocStyle::html_document
+abstract: |
+  This file contains the full code for replicating the analysis on our manuscript.
+vignette: |
+  %\VignetteIndexEntry{single}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 df_print: kable
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval=TRUE)
+knitr::opts_chunk$set(echo = TRUE, eval=FALSE)
 knitr::opts_chunk$set(engine.opts = list(bash = "-l"))
-knitr::opts_knit$set(root.dir =
-                         "~/SINGLe/")
-#                       #   "~/SINGLEpaper/")
- # "/media/rocio/Data10TB/Work/Bibliography/RondelezLab/2022_SINGLe/GigaScience_submission/Espada_et_al/")
-                         
-#"/media/rocio/Data10TB/Work/Bibliography/RondelezLab/2022_SINGLe/GigaScience_submission/Espada_et_al/")
+# knitr::opts_knit$set(root.dir ="~/SINGLe/")
+
 ```
 
 This code reproduces the analysis made on our manuscript "Accurate gene consensus at low nanopore coverage", from the raw fast5 files returned by the Nanopore Sequencer to final figures.
@@ -58,7 +58,7 @@ This includes loading needed packages, defining functions and loading data that 
 
 
 Packages
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 require(single)
 suppressPackageStartupMessages(require(plyr))
 suppressPackageStartupMessages(require(dplyr))
@@ -76,7 +76,7 @@ suppressPackageStartupMessages(library(e1071))
 ```
 
 Functions
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 detect_homopolymer_positions <- function(sequence){
   l <- length(sequence)
   homopolymer_positions <- list()
@@ -163,7 +163,7 @@ dna_reverse_complement_string <- function(x){
 ```
 
 Paths
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 path_references  <- "1_ReferenceFiles/"
 path_raw_data <- "2_NanoporeRawReads/"
 path_save_figures <- "6_Figures/"
@@ -176,7 +176,7 @@ if(!dir.exists(path_analysis_lib)){dir.create(path_analysis_lib)}
 ```
 
 Colors
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 red      <- rgb(218,0,0,maxColorValue = 255)
 green    <- rgb(0,122,0,maxColorValue = 255)
 red_tr   <- rgb(230,0,0,alpha = 200, maxColorValue = 255)
@@ -202,7 +202,7 @@ methods_capital <- setNames(c("Nanopolish","Medaka","Racon","SINGLe","Guppy","No
 ```
 
 Plotting themes
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 theme_plot <- theme_bw()+
     theme(line=element_line(colour = "black", 
                             size = 0.5, linetype = "dashed",lineend = "square"),
@@ -225,7 +225,7 @@ theme_set(theme_plot)
 ```
 
 Reference sequence
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 reference_file <-  "1_ReferenceFiles/KTrefORF_1662.fasta"
 wildtypye_bstr <- readDNAStringSet(reference_file)
 wildtype <- toupper(biostr_to_char(wildtypye_bstr))
@@ -238,7 +238,7 @@ pos_wt_homopolymers <- unlist(wt_homopolymers)
 ```
 
 Experimental data for set of KlenTaq's 7 variants
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 kt7_barcodes <- paste0("barcode",c("05","06","07","08","09","10","11"))
 kt7_true_mutants <- data.frame(
                         Barcode = kt7_barcodes,
@@ -268,7 +268,7 @@ kt_true_mutations <- do.call(rbind,kt_true_mutations)
 
 
 Others
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 subsets       <- c(seq(3,9,by=1),seq(10,50,by=5))
 n_repetitions <- 50
 ```
@@ -352,7 +352,7 @@ printf "\n"
 
 ## SINGLe correction
 
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 pos_start = 60
 pos_end = 1721
 ```
@@ -1710,7 +1710,7 @@ ggsave(Figure_S4,filename=paste0(path_save_figures,"FigureS4.png"), width=17, he
 
 
 ------------------------------------------------------------------------
-# --- KlenTaq large library ----------------
+# KlenTaq large library 
 
 
 ### Filenames
@@ -1879,7 +1879,7 @@ cat("it took" , (toc-tic)[3], "s to run this chunk\n"); rm(tic, toc)
 ## Consensus for all barcode by all methods
 
 Load data 
-```{r, eval=T}
+```{r, eval=FALSE}
 barcodes_4reads <- read.table(file=paste0(path_analysis_lib,"KTLib_1700_2100_barcodes_4reads.txt")) %>%
     select(readID, BCsequence) %>% arrange(BCsequence)
 
@@ -1890,7 +1890,7 @@ barcodes_unique <- unique(barcodes_4reads$BCsequence)
 
 
 Generate fasta and fastq files that we need
-```{r create fast files, eval=T}
+```{r create fast files, eval=FALSE}
 tic <- proc.time()
 dir.create( paste0(path_analysis_lib, "fastq_per_barcode"))
 dir.create( paste0(path_analysis_lib, "fasta_per_barcode"))
@@ -2119,7 +2119,7 @@ cat("it took" , (toc-tic)[3], "s to run this chunk\n"); rm(tic, toc)
 ```
 
 Compute using nanopolish and medaka. first generate bash file
-```{r LIBconsensus others, eval=T}
+```{r LIBconsensus others, eval=FALSE}
 
 # Load data
 tic <- proc.time()
@@ -2631,7 +2631,7 @@ file_consensus_top10_inLIB <- paste0(path_analysis_lib,"Convergence_10top_mismat
 
 ```
 
-```{r LIB10BCs consensus to muts, eval=T}
+```{r LIB10BCs consensus to muts, eval=FALSE}
 tic <- proc.time()
 pos_initial=1
 pos_final=length(wildtype)
@@ -2760,7 +2760,7 @@ cat("it took" , (toc-tic)[3], "s to run this chunk\n"); rm(tic, toc)
 ```
 
 Compute true mutants from all reads according to each method
-```{r, eval=T}
+```{r, eval=FALSE}
 tic <- proc.time()
 
 KTLib_topBC_true_mutations <- read.table("3_PreprocessedData/Fig3_LargeSet_Consensus.txt", header=T) %>%
@@ -2809,7 +2809,7 @@ cat("it took" , (toc-tic)[3], "s to run this chunk\n"); rm(tic, toc)
 ```
 
 Compute success rate for consensus calling by method, as a function of reads used
-```{r LIB10BCs success rate, eval=T}
+```{r LIB10BCs success rate, eval=FALSE}
 tic <- proc.time()
 # consensus_by_method
 KTLib_topBC_subsets_mutations <- read.table("3_PreprocessedData/Fig3_ConvergenceConsensus_top10BC.txt", header=T) %>%
@@ -2868,7 +2868,7 @@ cat("it took" , (toc-tic)[3], "s to run this chunk\n"); rm(tic, toc)
 
 
 ### Figure 3A
-```{r Fig3A, fig.width=3, fig.height=3, eval=T}
+```{r Fig3A, fig.width=3, fig.height=3, eval=FALSE}
 fig_3a <- ggplot(KTLib_topBC_subsets_success_rate %>% 
                     filter((Method =="SINGLe"|Method=="Medaka") & Barcode=="TCAGTTATTACGTCCTGCGGACAGTAAGGTCCGAG"),
                 aes(x=Nreads,y=success_rate,col=Method) )+
@@ -2889,7 +2889,7 @@ fig_3a
 
 ### Figure S7: top 10 bc convergence
 
-```{r FigS7, fig.width=7, fig.height=10, eval=T}
+```{r FigS7, fig.width=7, fig.height=10, eval=F}
 Fig_Sup7<- ggplot(KTLib_topBC_subsets_success_rate %>% filter(Method!= "Racon"),
                   aes(x=Nreads,y=success_rate,col=Method) )+
     geom_point()+geom_line()+
@@ -3414,7 +3414,7 @@ Depricated nextpolish:
 # }
 ```
 
-Alternativa para completar deletions un poco mas rapido:
+Alternative to fill deletions faster:
 ```{r, eval=F}
 
 

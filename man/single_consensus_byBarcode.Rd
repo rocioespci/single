@@ -33,13 +33,12 @@ DNAStringSet with consensus sequences
 Main function to compute consensus after correcting reads by a SINGLE model.
 }
 \examples{
-refseq_fasta = system.file("extdata", "ref_seq.fasta", package = "single")
-ref_seq <- Biostrings::subseq(Biostrings::readDNAStringSet(refseq_fasta), 1,10)
+refseq_fasta = system.file("extdata", "ref_seq_10bases.fasta", package = "single")
 train_file <- system.file("extdata", "train_example.txt", package = "single")
 train <- read.table(train_file, header=TRUE)
-lib_example = system.file("extdata", "test_sequences.sorted.bam",package = "single")
-corrected_reads <- single_evaluate(bamfile = lib_example,
-                 single_fits = train,ref_seq = ref_seq,
+test_reads_example = system.file("extdata", "test_sequences.sorted.bam",package = "single")
+corrected_reads <- single_evaluate(bamfile = test_reads_example,
+                 single_fits = train,refseq_fasta = refseq_fasta,
                  pos_start=1,pos_end=10,gaps_weights = "minimum")
 barcodes = system.file("extdata", "Barcodes_table.txt",package = "single")
 consensus <- single_consensus_byBarcode(

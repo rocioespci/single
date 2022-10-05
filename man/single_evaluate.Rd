@@ -7,13 +7,14 @@
 single_evaluate(
   bamfile,
   single_fits,
-  ref_seq,
+  refseq_fasta,
   pos_start = NULL,
   pos_end = NULL,
   gaps_weights,
   save = FALSE,
   output_file,
-  verbose = FALSE
+  verbose = FALSE,
+  save_original_scores = FALSE
 )
 }
 \arguments{
@@ -21,7 +22,7 @@ single_evaluate(
 
 \item{single_fits}{Results of the SINGLE model as returned by single_train(). It can be either the output data.frame or the saved file.}
 
-\item{ref_seq}{DNAStringSet containing the true reference sequence}
+\item{refseq_fasta}{Fasta file containing reference sequence}
 
 \item{pos_start}{Numeric. Position to start analyzing, counting starts from 1 and it refers to reference used for minimap2 alignment.}
 
@@ -34,6 +35,8 @@ single_evaluate(
 \item{output_file}{File name for output, if save=TRUE.}
 
 \item{verbose}{Logical}
+
+\item{save_original_scores}{Logical. Should original Qscores be saved? If TRUE, they are stored in file whose name finishes in _original.fastq}
 }
 \value{
 Creates file output_prefix_corrected.txt with the Qscores re-scaled by SINGLE. Columns are SeqID position nucleotide isWT original_quality p_SINGLe
@@ -53,14 +56,13 @@ Before running single_evaluate_function you have to align your INPUT data to a R
 \code{samtools mpileup -Q 0 ALIGNMENT.sorted.bam > COUNTS.txt}
 }
 \examples{
-refseq_fasta <- system.file("extdata", "ref_seq.fasta", package = "single")
-ref_seq <- Biostrings::subseq(Biostrings::readDNAStringSet(refseq_fasta), 1,10)
+refseq_fasta = system.file("extdata", "ref_seq_10bases.fasta", package = "single")
 train_file <- system.file("extdata", "train_example.txt", package = "single")
 train <- read.table(train_file, header=TRUE)
 test_reads_example <- system.file("extdata", "test_sequences.sorted.bam",
    package = "single")
 corrected_reads <- single_evaluate(bamfile = test_reads_example,
-                 single_fits = train,ref_seq = ref_seq,
+                 single_fits = train,refseq_fasta = refseq_fasta,
                  pos_start=1,pos_end=10,gaps_weights = "minimum")
 corrected_reads
 }

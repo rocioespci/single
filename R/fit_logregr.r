@@ -9,6 +9,7 @@
 #' @param output_file_fits File into which save the single fits if save=TRUE
 #' @param output_file_data File into which save the fitted data if save=TRUE
 #' @param verbose Logical.
+#' @param keep_fit_quality Logical. Should parameters related to the quality of the fit be returned in extra columns of the output?
 #' @return data.frame with columns position, nucleotide, slope and intercept (of the sigmoidal regression).
 #' @importFrom tidyr replace_na
 #' @importFrom stats glm coefficients
@@ -97,7 +98,8 @@ fit_logregr <- function(counts_pnq,ref_seq,p_prior_errors,p_prior_mutations,
         dplyr::mutate(prior_slope=NA, prior_intercept=NA)
     if(keep_fit_quality){
         data_fits <- data_fits %>%
-            dplyr::mutate(slope_pval=NA, intercept_pval=NA)
+            dplyr::mutate(slope_pval=NA, intercept_pval=NA,
+                          deviance=NA, null_deviance=NA)
     }
     n_i <- nrow(data_fits)
     if(verbose){message("\n Fitting \n")}
@@ -131,8 +133,10 @@ fit_logregr <- function(counts_pnq,ref_seq,p_prior_errors,p_prior_mutations,
             data_fits$prior_intercept[i] <- aux_prior_coefficients[1]
             if(keep_fit_quality){
                 fit_summ <- summary(aux_prior_fit)$coefficients
-                data_fits$slope_pval <- fit_summ[2,4]
-                data_fits$intercept_pval <- fit_summ[1,4]
+                data_fits$slope_pval[i] <- fit_summ[2,4]
+                data_fits$intercept_pval[i] <- fit_summ[1,4]
+                data_fits$deviance[i] <- summary(aux_prior_fit)$deviance
+                data_fits$null_deviance[i] <- summary(aux_prior_fit)$null.deviance
             }
         }
     }

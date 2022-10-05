@@ -11,6 +11,12 @@
 #' @source https://www.agilent.com/cs/library/usermanuals/public/200550.pdf
 "mutation_rate"
 
-#' @importFrom utils globalVariables
-utils::globalVariables(c("bases", "ascii","mutation_rate"))
+#' ASCII code
+#'
+#' Vector ascii
+#' @format Named character vector of length 94. Names are ascii character and value is the probability of error.
+"ascii_v"
 
+
+#' @importFrom utils globalVariables
+utils::globalVariables(c("bases", "ascii","mutation_rate","ascii_v"))

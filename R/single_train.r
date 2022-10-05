@@ -72,6 +72,7 @@ single_train    <- function(bamfile,
     outfile_fits            <- paste0(output,"_SINGLe_fits.txt")
     outfile_data            <- paste0(output,"_SINGLe_data.txt")
     outfile_evaluation      <- paste0(output,"_SINGLe_results.txt")
+    outfile_counts          <- paste0(output,"_SINGLe_countsPNQ.txt")
 
     if(verbose){message("single_train\n")}
 
@@ -81,7 +82,7 @@ single_train    <- function(bamfile,
     counts_pnq <- pileup_by_QUAL(bam_file=bamfile,
                     pos_start=pos_start,
                     pos_end=pos_end)
-
+    if(save_partial){ write.table(counts_pnq, file=outfile_counts) }
     # Calculate priors errors
     if(verbose){message("\t p_prior-error \n")}
     p_prior_errors <- p_prior_errors(counts_pnq=counts_pnq,

@@ -12,7 +12,8 @@ fit_logregr(
   save = FALSE,
   output_file_fits,
   output_file_data,
-  verbose = FALSE
+  verbose = FALSE,
+  keep_fit_quality = FALSE
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ fit_logregr(
 \item{output_file_data}{File into which save the fitted data if save=TRUE}
 
 \item{verbose}{Logical.}
+
+\item{keep_fit_quality}{Logical. Should parameters related to the quality of the fit be returned in extra columns of the output?}
 }
 \value{
 data.frame with columns position, nucleotide, slope and intercept (of the sigmoidal regression).
