@@ -9,7 +9,7 @@ output:
 abstract: |
   This file contains the full code for replicating the analysis on our manuscript.
 vignette: |
-  %\VignetteIndexEntry{single}
+  %\VignetteIndexEntry{single_fullcode}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 df_print: kable

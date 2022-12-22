@@ -83,7 +83,7 @@ single_evaluate <- function(bamfile, single_fits,
     names(scores_aligned) <- reads[[1]]$qname
 
     #Fill with gaps at the end of sequences shorter than pos_end
-    index_short_sequences <- which(width(reads_aligned)<pos_end)
+    index_short_sequences <- which(Biostrings::width(reads_aligned) <pos_end)
     for(i in index_short_sequences){
         reads_aligned[i] <- paste0(as.character(reads_aligned[i]), paste0(rep("-", pos_end-width(reads_aligned[i])),collapse = ""),collapse = "")
         scores_aligned[i] <- paste0(as.character(scores_aligned[i]), paste0(rep("-", pos_end-width(scores_aligned[i])),collapse = ""),collapse = "")
@@ -93,7 +93,7 @@ single_evaluate <- function(bamfile, single_fits,
     # Replace deletions score's values
     if(verbose){message("Assign values to deletions\n")}
     if(verbose){pb=utils::txtProgressBar(min =0,max=length(reads_aligned),style = 3)}
-    a <- str_locate_all(reads_aligned, "-+")
+    a <- str_locate_all(as.character(reads_aligned), "-+")
     for(i in seq(a)){
         if(verbose){utils::setTxtProgressBar(pb,i)}
         if(nrow(a[[i]])==0){next()}
