@@ -15,18 +15,11 @@
 #' @importFrom Biostrings DNAStringSet readQualityScaledDNAStringSet quality readDNAStringSet
 #' @export single_consensus_byBarcode
 #' @examples
-#' refseq_fasta = system.file("extdata", "ref_seq_10bases.fasta", package = "single")
-#' train_file <- system.file("extdata", "train_example.txt", package = "single")
-#' train <- read.table(train_file, header=TRUE)
-#' test_reads_example = system.file("extdata", "test_sequences.sorted.bam",package = "single")
-#' corrected_reads <- single_evaluate(bamfile = test_reads_example,
-#'                  single_fits = train,refseq_fasta = refseq_fasta,
-#'                  pos_start=1,pos_end=10,gaps_weights = "minimum")
-#' barcodes = system.file("extdata", "Barcodes_table.txt",package = "single")
-#' consensus <- single_consensus_byBarcode(
-#'                  barcodes_table = barcodes,
-#'                  sequences = corrected_reads,
-#'                  verbose = FALSE)
+#' pos_start=1
+#' pos_end = 100
+#' barcodes_file =  system.file("extdata", "Barcodes_table.txt",package = "single")
+#' reads_single = system.file("extdata", "corrected_seqs.fastq", package = "single")
+#' single_consensus_byBarcode(barcodes_file,reads_single, verbose = FALSE)
 single_consensus_byBarcode <- function(barcodes_table,sequences,
                                 readID_col=1,bcID_col=2,
                                 header=TRUE, dec=".",sep=" ", verbose=TRUE){

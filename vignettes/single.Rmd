@@ -79,7 +79,7 @@ ref_seq <- Biostrings::subseq(Biostrings::readDNAStringSet(refseq_fasta), pos_st
 ```
 
 First, train the model using nanopore reads of the reference (wild type).
-```{r}
+```{r, train model}
 REF_READS <- system.file("extdata", "train_seqs_500.sorted.bam",package = "single")
 train <- single_train(bamfile=REF_READS,
                       output="train",
@@ -96,7 +96,7 @@ print(head(train))
 
 
 Second, evaluate model: use the fitted model to evaluate the reads of your library, and re-weight the QUAL (quality scores).
-```{r}
+```{r, evaluate model}
 LIB_READS <- system.file("extdata","test_sequences.sorted.bam",package ="single")
 corrected_reads <- single_evaluate(bamfile = LIB_READS,
                 single_fits = train,
@@ -110,7 +110,7 @@ corrected_reads
 ```
 
 Finally, use the reads of the library with the corrected QUAL scores to compute a weighted consensus sequences in subsets of reads. The sets of reads corresponding to each variant are indicated in a table (here BC_TABLE) of two columns: SeqID (name of the read) and BCid (barcode or group identity).
-```{r}
+```{r, consensus}
 BC_TABLE <- system.file("extdata", "Barcodes_table.txt",package = "single")
 consensus <- single_consensus_byBarcode(barcodes_table = BC_TABLE,
                            sequences = corrected_reads,
@@ -122,7 +122,7 @@ consensus
 ### Other functions included in the package
 
 Use pileup to create a data.frame with counts by position nucleotide and quality score
-```{r}
+```{r, pileup}
 counts_pnq <- pileup_by_QUAL(bam_file=REF_READS,
                     pos_start=pos_start,
                     pos_end=pos_end)
@@ -130,21 +130,21 @@ head(counts_pnq)
 ```
 
 Compute a priori probability of making errors
-```{r}
+```{r, ppriorerrors}
 p_prior_errors <- p_prior_errors(counts_pnq=counts_pnq,
                                   save=FALSE)
 p_prior_errors
 ```
 
 Compute a priori probability of having a mutation
-```{r}
+```{r, ppriormutations}
 p_prior_mutations <- p_prior_mutations(rates.matrix = mutation_rate,
                         mean.n.mut = 5,ref_seq = ref_seq,save = FALSE)
 head(p_prior_mutations)
 ```
 
 Fit SINGLe logistic regression using the prior probabilities and the counts
-```{r}
+```{r fits}
 fits <- fit_logregr(counts_pnq = counts_pnq,ref_seq=ref_seq,
                     p_prior_errors = p_prior_errors,
                     p_prior_mutations = p_prior_mutations,
