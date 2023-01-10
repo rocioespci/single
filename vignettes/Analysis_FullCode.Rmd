@@ -116,16 +116,16 @@ replace_str_in_pos   <- function(string, pos, replacement){
 bc_one_mutation    <- function(x){
   bases <- c("A","C","G","T")
   y <- c()
-  n = 0
+  n <- 0
   for(i in 1:nchar(x)){
-    n = n+1
+    n <- n+1
     non_wt <- setdiff(bases, substr(x, i,i))
     non_wt <- paste0(non_wt, collapse = "")
     non_wt <- paste0("[",non_wt, "]", collapse = "")
     y[n] <- replace_str_in_pos(x, i, non_wt)
   }
   for(i in 2:(nchar(x)-1)){
-    n = n+1
+    n <- n+1
     y[n] <- paste0(substr(x,1,(i-1)),substr(x,(i+1), nchar(x)))
   }
   y <- unique(y)
@@ -145,7 +145,7 @@ dna_complement <- function(x){
   return(y)
 }
 dna_complement_vector <- function(x){
-  y <- sapply(x, dna_complement, USE.NAMES = F)
+  y <- vapply(x, dna_complement, USE.NAMES = F)
   return(y)
 }
 dna_complement_string <- function(x){
@@ -231,7 +231,7 @@ wildtypye_bstr <- readDNAStringSet(reference_file)
 wildtype <- toupper(biostr_to_char(wildtypye_bstr))
 
 wt_homopolymers <- detect_homopolymer_positions(wildtype)
-wt_homopolymers <- wt_homopolymers[sapply(wt_homopolymers,length)>1]
+wt_homopolymers <- wt_homopolymers[vapply(wt_homopolymers,length)>1]
 pos_wt_homopolymers <- unlist(wt_homopolymers)
 
 
@@ -353,8 +353,8 @@ printf "\n"
 ## SINGLe correction
 
 ```{r, eval=FALSE}
-pos_start = 60
-pos_end = 1721
+pos_start <- 60
+pos_end <- 1721
 ```
 
 ```{r, warning=F, single, eval= F}
@@ -518,7 +518,7 @@ wt  <- as.character(data_chosen_pos_base$wt.base[1])
 #Filter all fits' data by position and base
 data_fits_chosen_pos_base <- data_fits %>% 
     filter(pos==position & (nucleotide==mut.base | nucleotide==wt) & strand==str)
-class_fit_prior <- sapply(data_fits_chosen_pos_base$priors, class)
+class_fit_prior <- vapply(data_fits_chosen_pos_base$priors, class)
 if(any(class_fit_prior=="numeric")){
     ind_out <- which(class_fit_prior=="numeric");
     data_fits_chosen_pos_base <- data_fits_chosen_pos_base[-ind_out,]
@@ -645,15 +645,15 @@ forward_fits <- all_fits %>% filter(strand=="+")
 reverse_fits <- all_fits %>% filter(strand=="-")
 qval <- seq(0,40,by=0.1)
 par(mfrow=c(1,4), mar=c(4,4,1,1),mgp=c(2,.7,0), las=1)
-first = T
+first <- T
 for(n in c(1278:1281)+4*7-1){
   y_for <- glm.predict.(x=qval, slope = forward_fits$prior_slope[n], intercept = forward_fits$prior_intercept[n])
   y_rev <- glm.predict.(x=qval, slope = reverse_fits$prior_slope[n], intercept = reverse_fits$prior_intercept[n])
-  name = paste(forward_fits$pos[n], forward_fits$nucleotide[n])
+  name <- paste(forward_fits$pos[n], forward_fits$nucleotide[n])
   if(first){
     df <- rbind(data.frame(Qscore=qval,Sense="Forward",Fit=y_for,n=name),
                 data.frame(Qscore=qval,Sense="Reverse",Fit=y_rev,n=name))
-    first=F
+    first <- F
   }else{
       df <- rbind(df,
                   rbind(data.frame(Qscore=qval,Sense="Forward",Fit=y_for,n=name),
@@ -693,11 +693,11 @@ for(bc_i in kt7_barcodes){
 
     #Load corrected data
     seqs_single <- readQualityScaledDNAStringSet(paste0(path_analysis_lib7, bc_i,"_SINGLe.fastq"))
-    aux_seqs <- sapply(as.character(seqs_single),strsplit, split="")
+    aux_seqs <- vapply(as.character(seqs_single),strsplit, split="")
     aux_quals <- 1-as(quality(seqs_single),"NumericList")
     aux_pos <- lapply(aux_seqs, seq_along)
-    aux_names <- c(sapply(names(seqs_single),rep, each=1662))
-    data_single = data.frame(nucleotide = unlist(aux_seqs),
+    aux_names <- c(vapply(names(seqs_single),rep, each=1662))
+    data_single <- data.frame(nucleotide = unlist(aux_seqs),
                                 p_SINGLe=unlist(aux_quals),
                                 position=unlist(aux_pos) , 
                             seq_id=aux_names)
@@ -708,7 +708,7 @@ for(bc_i in kt7_barcodes){
     reads <- Rsamtools::scanBam(bf)
     #keep sequences that start at least at pos_start
     index <- which(reads[[1]]$pos<=pos_start)
-    reads[[1]] <- sapply(reads[[1]], function(x){x[index]})
+    reads[[1]] <- vapply(reads[[1]], function(x){x[index]})
 
     seqs_guppy <- GenomicAlignments::sequenceLayer(reads[[1]]$seq,
                                 reads[[1]]$cigar,to = "reference")
@@ -732,11 +732,11 @@ for(bc_i in kt7_barcodes){
     seqs_guppy <- subseq(seqs_guppy, start=pos_start+1-reads[[1]]$pos,end=pos_end+1-reads[[1]]$pos)
     scores_guppy <- subseq(scores_guppy, start=pos_start+1-reads[[1]]$pos,end=pos_end+1-reads[[1]]$pos)
    
-    aux_seqs <- sapply(as.character(seqs_guppy),strsplit, split="")
+    aux_seqs <- vapply(as.character(seqs_guppy),strsplit, split="")
     aux_quals <- 1-as(scores_guppy,"NumericList")
     aux_pos <- lapply(aux_seqs, seq_along)
-    aux_names <- c(sapply(names(seqs_guppy),rep, each=1662))
-    data_guppy = data.frame(seq_id=aux_names,
+    aux_names <- c(vapply(names(seqs_guppy),rep, each=1662))
+    data_guppy <- data.frame(seq_id=aux_names,
                             position=unlist(aux_pos), 
                             nucleotide = unlist(aux_seqs),
                             p_Guppy=unlist(aux_quals)
@@ -890,22 +890,22 @@ for(i in 1:7){
 
    #Load corrected data
     seqs_single <- readQualityScaledDNAStringSet(paste0(path_analysis_lib7, kt7_barcodes[i],"_SINGLe.fastq"))
-    aux_seqs <- sapply(as.character(seqs_single),strsplit, split="")
+    aux_seqs <- vapply(as.character(seqs_single),strsplit, split="")
     aux_quals <- 1-as(quality(seqs_single),"NumericList")
     aux_pos <- lapply(aux_seqs, seq_along)
-    aux_names <- c(sapply(names(seqs_single),rep, each=1662))
-    data_single = data.frame(nucleotide = unlist(aux_seqs),
+    aux_names <- c(vapply(names(seqs_single),rep, each=1662))
+    data_single <- data.frame(nucleotide = unlist(aux_seqs),
                                 p_SINGLe=unlist(aux_quals),
                                 position=unlist(aux_pos) , 
                             SeqID=aux_names)
     rownames(data_single)<-NULL
     
     seqs_original <- readQualityScaledDNAStringSet(paste0(path_analysis_lib7, kt7_barcodes[i],"_SINGLe_original.fastq"))
-    aux_seqs <- sapply(as.character(seqs_original),strsplit, split="")
+    aux_seqs <- vapply(as.character(seqs_original),strsplit, split="")
     aux_quals <- 1-as(quality(seqs_original),"NumericList")
     aux_pos <- lapply(aux_seqs, seq_along)
-    aux_names <- c(sapply(names(seqs_original),rep, each=1662))
-    data_guppy = data.frame(SeqID=aux_names,
+    aux_names <- c(vapply(names(seqs_original),rep, each=1662))
+    data_guppy <- data.frame(SeqID=aux_names,
                             position=unlist(aux_pos), 
                             nucleotide = unlist(aux_seqs),
                             p_Guppy=unlist(aux_quals)
@@ -922,7 +922,7 @@ for(i in 1:7){
     if(file.exists(file_out_consensus)){file.remove(file_out_consensus)}
     cat("Barcode\tnseqs\trepetition\tmutation\n", file=file_out_consensus,append=F)
     pb <- txtProgressBar(0,length(subsets)*n_repetitions,style=3)
-    counter = 0
+    counter <- 0
     bc_seqsID <- unique(data$SeqID)
     for( s in subsets){
         for (r in 1:n_repetitions) {
@@ -942,11 +942,11 @@ for(i in 1:7){
             muts_guppy    <- detect_mutations(biostr_to_char(cons_guppy), wildtype)
             muts_noweight <- detect_mutations(biostr_to_char(cons_noweight), wildtype)
 
-            n_single = length(muts_single)
-            n_guppy = length(muts_guppy)
-            n_noweight = length(muts_noweight)
-            n_tot = n_single+n_guppy+n_noweight
-            df = data.frame(barcode = rep(kt7_barcodes[i],n_tot),
+            n_single <- length(muts_single)
+            n_guppy <- length(muts_guppy)
+            n_noweight <- length(muts_noweight)
+            n_tot <- n_single+n_guppy+n_noweight
+            df <- data.frame(barcode = rep(kt7_barcodes[i],n_tot),
                             nseqs=s,repetition=r,
                             mutation=c(muts_single,muts_guppy,muts_noweight),
                             method = c(rep("SINGLe", n_single),
@@ -954,7 +954,7 @@ for(i in 1:7){
                                        rep("No weights",n_noweight)))
             
             write.table(df, append = T, col.names = F,row.names = F, file = file_out_consensus)
-            counter= counter+1
+            counter <- counter+1
             setTxtProgressBar(pb,counter)
         }
     }
@@ -974,22 +974,22 @@ for(i in 1:7){
 
   #Load corrected data
     seqs_single <- readQualityScaledDNAStringSet(paste0(path_analysis_lib7, kt7_barcodes[i],"_SINGLe.fastq"))
-    aux_seqs <- sapply(as.character(seqs_single),strsplit, split="")
+    aux_seqs <- vapply(as.character(seqs_single),strsplit, split="")
     aux_quals <- 1-as(quality(seqs_single),"NumericList")
     aux_pos <- lapply(aux_seqs, seq_along)
-    aux_names <- c(sapply(names(seqs_single),rep, each=1662))
-    data_single = data.frame(nucleotide = unlist(aux_seqs),
+    aux_names <- c(vapply(names(seqs_single),rep, each=1662))
+    data_single <- data.frame(nucleotide = unlist(aux_seqs),
                                 p_SINGLe=unlist(aux_quals),
                                 position=unlist(aux_pos) , 
                             SeqID=aux_names)
     rownames(data_single)<-NULL
     
     seqs_original <- readQualityScaledDNAStringSet(paste0(path_analysis_lib7, kt7_barcodes[i],"_SINGLe_original.fastq"))
-    aux_seqs <- sapply(as.character(seqs_original),strsplit, split="")
+    aux_seqs <- vapply(as.character(seqs_original),strsplit, split="")
     aux_quals <- 1-as(quality(seqs_original),"NumericList")
     aux_pos <- lapply(aux_seqs, seq_along)
-    aux_names <- c(sapply(names(seqs_original),rep, each=1662))
-    data_guppy = data.frame(SeqID=aux_names,
+    aux_names <- c(vapply(names(seqs_original),rep, each=1662))
+    data_guppy <- data.frame(SeqID=aux_names,
                             position=unlist(aux_pos), 
                             nucleotide = unlist(aux_seqs),
                             p_Guppy=unlist(aux_quals)
@@ -1009,7 +1009,7 @@ for(i in 1:7){
     cat("Barcode\tnseqs\trepetition\tmutation\n", file=file_out_consensus,append=F)
     pb <- txtProgressBar(0,length(subsets)*n_repetitions,style=3)
 
-    counter = 0
+    counter <- 0
     bc_seqsID <- unique(data$SeqID)
     for( s in subsets){
         for (r in 1:n_repetitions) {
@@ -1021,7 +1021,7 @@ for(i in 1:7){
             for(n in index_homopolymers){
                 if(n %in% n_memory){next()}
                 hp_pos <- subset_bc_reads$position[n]
-                hp_pos_ref <- wt_homopolymers[sapply(wt_homopolymers, function(x){hp_pos %in% x})][[1]]
+                hp_pos_ref <- wt_homopolymers[vapply(wt_homopolymers, function(x){hp_pos %in% x})][[1]]
                 hp_vec_logical <- hp_pos_ref==hp_pos
                 hp_vec_length <- length(hp_vec_logical)
                 hp_vec <- rep(NA,hp_vec_length)
@@ -1036,8 +1036,8 @@ for(i in 1:7){
                 data_aux <- subset_bc_reads[hp_vec,]
                 if(all(data_aux$nucleotide=="-")){next()}
         
-                pos = data_aux$position
-                nucl = data_aux$nucleotide
+                pos <- data_aux$position
+                nucl <- data_aux$nucleotide
                 ind_order <- c(which(nucl!="-"),which(nucl=="-"))
         
                 subset_bc_reads$position[hp_vec] <- pos[order(ind_order)]
@@ -1063,26 +1063,26 @@ for(i in 1:7){
             muts_guppy    <- detect_mutations(biostr_to_char(cons_guppy), wildtype)
             muts_noweight <- detect_mutations(biostr_to_char(cons_noweight), wildtype)
 
-            n_single = length(muts_single)
-            n_guppy = length(muts_guppy)
-            n_noweight = length(muts_noweight)
-            n_tot = n_single+n_guppy+n_noweight
+            n_single <- length(muts_single)
+            n_guppy <- length(muts_guppy)
+            n_noweight <- length(muts_noweight)
+            n_tot <- n_single+n_guppy+n_noweight
           if(n_tot==0){
-               df = data.frame(barcode = rep(kt7_barcodes[i],3),
+               df <- data.frame(barcode = rep(kt7_barcodes[i],3),
                             nseqs=s,
                             repetition=r,
                             mutation="wildtype",
                             method = c("SINGLe", "Guppy","No weights"))
        
           }else{
-            df = data.frame(barcode = rep(kt7_barcodes[i],n_tot),
+            df <- data.frame(barcode = rep(kt7_barcodes[i],n_tot),
                             nseqs=s,
                             repetition=r,
                             mutation=c(muts_single,muts_guppy,muts_noweight),
                             method = c(rep("SINGLe", n_single),rep("Guppy",n_guppy), rep("No weights",n_noweight)))
           }
             write.table(df, append = T, col.names = F,row.names = F, file = file_out_consensus)
-            counter= counter+1
+            counter<- counter+1
             setTxtProgressBar(pb,counter)
         }
     }
@@ -1103,10 +1103,10 @@ PATH_TO_FAST5_FILES<- "2_NanoporeRawReads/SmallSet_fast5/" #PATH_TO_FAST5_FILES 
 dir.create(paste0(path_analysis_lib7,"fast5files/")) # individual fast5 files will be stored there temporally 
 
 # Split to individual files
-split_fast5 = paste0("multi_to_single_fast5 -i ",PATH_TO_FAST5_FILES, " -s ",path_analysis_lib7, "fast5files/")  
-system(split_fast5)
+split_fast5 <- paste0("multi_to_single_fast5 -i ",PATH_TO_FAST5_FILES, " -s ",path_analysis_lib7, "fast5files/")  
+system2(split_fast5)
 
-input_table_barcodes = read.table(paste0(path_analysis_lib7,"barcoding_summary.txt"),header=T)
+input_table_barcodes <- read.table(paste0(path_analysis_lib7,"barcoding_summary.txt"),header=T)
 input_table_barcodes <- input_table_barcodes %>%
     filter(barcode_arrangement %in% kt7_barcodes) %>%
     select(read_id,barcode_arrangement)
@@ -1115,23 +1115,25 @@ input_table_barcodes <- input_table_barcodes %>%
 # Split individual files into folders according to barcode
 individual_files <- dir(pattern="*.fast5",path=paste0(path_analysis_lib7,"fast5files/"),recursive=T)
 individual_files <- data.frame(file =individual_files)
-individual_files$read_id = sapply(individual_files$file, function(x) { sub(pattern = ".fast5",replacement = "",x=strsplit(x,split="/", fixed=T)[[1]][2])})
-individual_files = left_join(individual_files,input_table_barcodes)
+individual_files$read_id <- vapply(individual_files$file, function(x) { 
+    sub(pattern = ".fast5",replacement = "",x=strsplit(x,split="/", fixed=T)[[1]][2])
+    })
+individual_files <- left_join(individual_files,input_table_barcodes)
 
 for(bc in kt7_barcodes){
     dir.create(paste0(path_analysis_lib7,"fast5files/", bc))
     barcode_files <- individual_files %>% filter(barcode_arrangement==bc)
     
     commands <- paste0("mv ",path_analysis_lib7,"fast5files/", barcode_files$file," ", path_analysis_lib7,"fast5files/",bc,"/")
-    sapply(commands,system)
+    vapply(commands,system2)
 }
 
 # Create one file per barcode
 dir.create(paste0(path_analysis_lib7, "fast5files_grouped"))
 for(bc in kt7_barcodes){
     dir.create(paste0(path_analysis_lib7, "fast5files_grouped/",bc))
-    command = paste0("single_to_multi_fast5 -i ",path_analysis_lib7,"fast5files/", bc, " -s ", path_analysis_lib7,"fast5files_grouped/",bc, " -f ", bc, " -n ", 1000)
-    system(command)
+    command <- paste0("single_to_multi_fast5 -i ",path_analysis_lib7,"fast5files/", bc, " -s ", path_analysis_lib7,"fast5files_grouped/",bc, " -f ", bc, " -n ", 1000)
+    system2(command)
 }
 
 toc <- proc.time()
@@ -1273,7 +1275,7 @@ create_run_cfg <- function(run_cfg_file, ref_fasta, workdir){
 }
 
 dir.create(paste0(path_analysis_lib7,"nextpolish/"))
-system(paste0("cp ", reference_file, " ",path_analysis_lib7,"nextpolish/"))
+system2(paste0("cp ", reference_file, " ",path_analysis_lib7,"nextpolish/"))
 for(bc in kt7_barcodes){
     save_file <- paste0(path_analysis_lib7,bc, "_ConsensusbyNextPolish.fasta")
 
@@ -1284,22 +1286,22 @@ for(bc in kt7_barcodes){
             cat("----------------",ns, r, "\n")
 
             #Create file with subset of sequences
-            subset_name = paste0(bc,"_",ns, "_",r)
+            subset_name <- paste0(bc,"_",ns, "_",r)
             filename_subset <- paste0(run_folder,subset_name,".fastq")
            
             ## Run nextpolish
-            system(paste0("mv ", path_analysis_lib7,"subsets/", subset_name, ".fastq ", path_analysis_lib7,"nextpolish/"))
-            system(paste0("echo '", subset_name,".fastq' >", path_analysis_lib7,"nextpolish/lgs.fofn"))
+            system2(paste0("mv ", path_analysis_lib7,"subsets/", subset_name, ".fastq ", path_analysis_lib7,"nextpolish/"))
+            system2(paste0("echo '", subset_name,".fastq' >", path_analysis_lib7,"nextpolish/lgs.fofn"))
             create_run_cfg(run_cfg_file=paste0(path_analysis_lib7,"nextpolish/run.cfg"),
                            ref_fasta="KTrefORF_1662.fasta",
                            workdir=paste0(subset_name,"/"))
-            system(paste0("cd ",path_analysis_lib7,"nextpolish/ ; nextPolish run.cfg"))
-            system(paste0("sed -i '1s/.*/>",subset_name,"'/ ",path_analysis_lib7,"nextpolish/",subset_name, "/genome.nextpolish.fasta "))
-            system(paste0("cat ",path_analysis_lib7,"nextpolish/", subset_name, "/genome.nextpolish.fasta >>", save_file))
-            system(paste0("rm -r ", path_analysis_lib7,"nextpolish/", subset_name))
-            system(paste0("rm -r ", path_analysis_lib7,"nextpolish/", subset_name,".fastq"))
-            system(paste0("rm -r ", path_analysis_lib7,"nextpolish/lgs.fofn"))
-            system(paste0("rm -r ", path_analysis_lib7,"nextpolish/run.cfg"))
+            system2(paste0("cd ",path_analysis_lib7,"nextpolish/ ; nextPolish run.cfg"))
+            system2(paste0("sed -i '1s/.*/>",subset_name,"'/ ",path_analysis_lib7,"nextpolish/",subset_name, "/genome.nextpolish.fasta "))
+            system2(paste0("cat ",path_analysis_lib7,"nextpolish/", subset_name, "/genome.nextpolish.fasta >>", save_file))
+            system2(paste0("rm -r ", path_analysis_lib7,"nextpolish/", subset_name))
+            system2(paste0("rm -r ", path_analysis_lib7,"nextpolish/", subset_name,".fastq"))
+            system2(paste0("rm -r ", path_analysis_lib7,"nextpolish/lgs.fofn"))
+            system2(paste0("rm -r ", path_analysis_lib7,"nextpolish/run.cfg"))
         }
     }
 }
@@ -1348,7 +1350,7 @@ Re-shape results to a unique matrix
 ```{r, eval= F}
 tic <- proc.time()
 # Racon
-racon_mismatches = data.frame(Barcode=NA,Nreads=NA,repetition=NA,Position=NA,base.original=NA,base.mutated=NA,mutation=NA)
+racon_mismatches <- data.frame(Barcode=NA,Nreads=NA,repetition=NA,Position=NA,base.original=NA,base.mutated=NA,mutation=NA)
 for(bc in kt7_barcodes){
     racon_consensus <- readDNAStringSet(paste0(path_analysis_lib7,bc,"_ConsensusbyRacon.txt"))
     for(i in seq_along(racon_consensus)){
@@ -1360,7 +1362,7 @@ for(bc in kt7_barcodes){
         ref <- strsplit(as.character(pattern(ali)), split="")[[1]]
         read <- strsplit(as.character(subject(ali)),split="")[[1]]
         index <- which(ref!=read)
-        mismatches = paste0(ref[index],index,read[index])
+        mismatches <- paste0(ref[index],index,read[index])
         if(length(mismatches)>0){
             df_aux <- data.frame(Barcode=bc,Nreads=info[2],repetition=info[3],Position=index,
                                  base.original=ref[index],base.mutated=read[index],mutation=mismatches)
@@ -1371,7 +1373,7 @@ for(bc in kt7_barcodes){
 racon_mismatches <- racon_mismatches %>% filter(!is.na(Barcode)) %>% mutate(method="Racon",homopolymers=NA)
 
 # Medaka
-medaka_mismatches = data.frame(Barcode=NA,Nreads=NA,repetition=NA,Position=NA,base.original=NA,base.mutated=NA,mutation=NA)
+medaka_mismatches <- data.frame(Barcode=NA,Nreads=NA,repetition=NA,Position=NA,base.original=NA,base.mutated=NA,mutation=NA)
 for(bc in kt7_barcodes){
     medaka_consensus <- readDNAStringSet(paste0(path_analysis_lib7,bc,"_ConsensusbyMedaka.txt"))
     for(i in seq_along(medaka_consensus)){
@@ -1383,7 +1385,7 @@ for(bc in kt7_barcodes){
         ref <- strsplit(as.character(pattern(ali)), split="")[[1]]
         read <- strsplit(as.character(subject(ali)),split="")[[1]]
         index <- which(ref!=read)
-        mismatches = paste0(ref[index],index,read[index])
+        mismatches <- paste0(ref[index],index,read[index])
         if(length(mismatches)>0){
             df_aux <- data.frame(Barcode=bc,Nreads=info[2],repetition=info[3],Position=index,
                                  base.original=ref[index],base.mutated=read[index],mutation=mismatches)
@@ -1394,20 +1396,20 @@ for(bc in kt7_barcodes){
 medaka_mismatches <- medaka_mismatches %>% filter(!is.na(Barcode))  %>% mutate(method="Medaka",homopolymers=NA)
 
 # Nanopolish
-nanopolish_mismatches = data.frame(Barcode=NA,Nreads=NA,repetition=NA,Position=NA,base.original=NA,base.mutated=NA)
+nanopolish_mismatches <- data.frame(Barcode=NA,Nreads=NA,repetition=NA,Position=NA,base.original=NA,base.mutated=NA)
 for(bc in kt7_barcodes){
 
-    results_nanopolish <- system(paste0("awk \'/^[^#]/ \' ",bc,"_ConsensusbyNanopolish.txt"), intern = T)
+    results_nanopolish <- system2(paste0("awk \'/^[^#]/ \' ",bc,"_ConsensusbyNanopolish.txt"), intern = T)
     if(length(results_nanopolish)==0){next()}
-    aux_nanopolish <- do.call(rbind,sapply(results_nanopolish, strsplit, split="\t"))
+    aux_nanopolish <- do.call(rbind,vapply(results_nanopolish, strsplit, split="\t"))
     colnames(aux_nanopolish) <- rownames(aux_nanopolish) <- NULL
     aux_nanopolish <- aux_nanopolish[,c(1,3,5,6)]
-    info <- sapply(aux_nanopolish[,1],strsplit,split="_")
+    info <- vapply(aux_nanopolish[,1],strsplit,split="_")
 
     if(nrow(aux_nanopolish)>0){
         aux_nanopolish <- data.frame(Barcode=bc,
-                                     Nreads=sapply(info, function(x){x[2]}),
-                                     repetition=sapply(info, function(x){x[3]}),
+                                     Nreads=vapply(info, function(x){x[2]}),
+                                     repetition=vapply(info, function(x){x[3]}),
                                      Position=aux_nanopolish[,2],
                                      base.original=aux_nanopolish[,3],base.mutated=aux_nanopolish[,4])
         nanopolish_mismatches <- nanopolish_mismatches %>% rbind(aux_nanopolish)
@@ -1419,7 +1421,7 @@ nanopolish_mismatches <- nanopolish_mismatches %>% filter(!is.na(Barcode)) %>%
 
 #remove insertions
 ind_insertions <- nchar(nanopolish_mismatches$base.mutated)>1
-nanopolish_mismatches$base.mutated[ind_insertions] <- sapply(nanopolish_mismatches$base.mutated[ind_insertions] , substr,1,1)
+nanopolish_mismatches$base.mutated[ind_insertions] <- vapply(nanopolish_mismatches$base.mutated[ind_insertions] , substr,1,1)
 nanopolish_mismatches <- nanopolish_mismatches %>% filter(base.mutated!=base.original)
 
 #split deletions
@@ -1450,7 +1452,7 @@ single_mismatches <- lapply(kt7_barcodes,
                                   y = read.table(name, header=T,row.names=NULL)
                                   return(y)})
 colnames(single_mismatches) <- c("Barcode","Nreads","repetition","mutation","method")
-single_mismatches$homopolymers = "original"
+single_mismatches$homopolymers <- "original"
 
 
 single_mismatches_sortHP <- lapply(kt7_barcodes,
@@ -1738,23 +1740,23 @@ seqsum_ktlib <- read.table("3_Analysis/LargeSet_SUP/sequencing_summary.txt", hea
 
 file_ktlib_fastq <- "3_Analysis/KTLib/KTLib_1700_2100.fastq"#LargeSet_1700_2100.fastq"
 file_ktlib_q15_fastq  <- "3_Analysis/KTLib/KTLib_1700_2100_Q15.fastq"
-nlines <- as.numeric(str_split(system(paste0("wc -l ",file_ktlib_fastq), intern=T), pattern=" ")[[1]][1])
-connectionFile = file(file_ktlib_fastq,"r")
-n=0
+nlines <- as.numeric(str_split(system2(paste0("wc -l ",file_ktlib_fastq), intern=T), pattern=" ")[[1]][1])
+connectionFile <- file(file_ktlib_fastq,"r")
+n<-0
 pb <- txtProgressBar(0,nlines,style = 3)
 while(n < nlines){
-  line = readLines(connectionFile,n=1)
+  line <- readLines(connectionFile,n=1)
   id <- substr(line,2,37)
   if(id %in% seqsum_ktlib$read_id){
     cat(line,"\n",file = file_ktlib_q15_fastq, append=T, sep="")
-    line = readLines(connectionFile,n=1)
+    line <- readLines(connectionFile,n=1)
     cat(line,"\n",file = file_ktlib_q15_fastq, append=T, sep="")
-    line = readLines(connectionFile,n=1)
+    line <- readLines(connectionFile,n=1)
     cat(line,"\n",file = file_ktlib_q15_fastq, append=T, sep="")
-    line = readLines(connectionFile,n=1)
+    line <- readLines(connectionFile,n=1)
     cat(line,"\n",file = file_ktlib_q15_fastq, append=T, sep="")
   }else{
-    line = readLines(connectionFile,n=3)
+    line <- readLines(connectionFile,n=3)
   }
     n <- n+4
   setTxtProgressBar(pb,n)
@@ -1774,8 +1776,8 @@ samtools sort 3_Analysis/KTLib/KTLib_1700_2100_Q15.bam -o 3_Analysis/KTLib/KTLib
 SINGLe correction
 ```{r LIBSINGLe, eval=F}
 tic <- proc.time()
-pos_start = 103
-pos_end = 1764
+pos_start <- 103
+pos_end <- 1764
 
 single_evaluate(bamfile    = "3_Analysis/KTLib/KTLib_1700_2100_Q15.sorted.bam",
                 single_fits   = single_train,
@@ -1917,10 +1919,10 @@ Load corrected sequences
 
 tic <- proc.time()
 seqs_single_ktlib <- readQualityScaledDNAStringSet(paste0(path_analysis_lib,"/KTLib_1700_2100_Q15_SINGLe.fastq"))
-aux_seqs <- sapply(as.character(seqs_single_ktlib),strsplit, split="")
+aux_seqs <- vapply(as.character(seqs_single_ktlib),strsplit, split="")
 aux_quals <- 1-as(quality(seqs_single_ktlib),"NumericList")
 aux_pos <- lapply(aux_seqs, seq)
-aux_names <- c(sapply(names(seqs_single_ktlib),rep, each=1662))
+aux_names <- c(vapply(names(seqs_single_ktlib),rep, each=1662))
 data_single_ktlib <- data.frame(nucleotide = unlist(aux_seqs),
                         p_SINGLe=unlist(aux_quals),
                         position=unlist(aux_pos),
@@ -1928,10 +1930,10 @@ data_single_ktlib <- data.frame(nucleotide = unlist(aux_seqs),
 rownames(data_single_ktlib)<-NULL
 
 seqs_guppy_ktlib <- readQualityScaledDNAStringSet(paste0(path_analysis_lib,"/KTLib_1700_2100_Q15_SINGLe_original.fastq"))
-aux_seqs <- sapply(as.character(seqs_single_ktlib),strsplit, split="")
+aux_seqs <- vapply(as.character(seqs_single_ktlib),strsplit, split="")
 aux_quals <- 1-as(quality(seqs_single_ktlib),"NumericList")
 aux_pos <- lapply(aux_seqs, seq)
-aux_names <- c(sapply(names(seqs_single_ktlib),rep, each=1662))
+aux_names <- c(vapply(names(seqs_single_ktlib),rep, each=1662))
 data_guppy_ktlib <- data.frame(nucleotide = unlist(aux_seqs),
                         p_Guppy=unlist(aux_quals),
                         position=unlist(aux_pos),
@@ -1952,7 +1954,7 @@ toc <- proc.time()
 cat("it took" , (toc-tic)[3], "s to run this chunk\n"); rm(tic, toc)
 
 barcodes_unique <- unique(data_single_ktlib$BCsequence)
-n_bc = length(barcodes_unique)
+n_bc <- length(barcodes_unique)
 
 # save.image(file='myEnvironment.RData')
 ```
@@ -1969,9 +1971,9 @@ tic <- proc.time()
 cat("Barcode;Nreads;mutations_by_single;mutations_by_nanopore;mutations_no_weights\n", file=file_out_consensus, append=F)
 
 pb <- txtProgressBar(0,n_bc,style=3)
-counter=0
+counter<-0
 wt_homopolymers <- detect_homopolymer_positions(wildtype)
-wt_homopolymers <- wt_homopolymers[sapply(wt_homopolymers,length)>1]
+wt_homopolymers <- wt_homopolymers[vapply(wt_homopolymers,length)>1]
 pos_wt_homopolymers <- unlist(wt_homopolymers)
 
 for( bc in barcodes_unique){
@@ -1983,7 +1985,7 @@ for( bc in barcodes_unique){
   for(n in index_homopolymers){
     if(n %in% n_memory){next()}
     hp_pos <- bc_reads$position[n]
-    hp_pos_ref <- wt_homopolymers[sapply(wt_homopolymers, function(x){hp_pos %in% x})][[1]]
+    hp_pos_ref <- wt_homopolymers[vapply(wt_homopolymers, function(x){hp_pos %in% x})][[1]]
     hp_vec_logical <- hp_pos_ref==hp_pos
     hp_vec_length <- length(hp_vec_logical)
     hp_vec <- rep(NA,hp_vec_length)
@@ -1998,8 +2000,8 @@ for( bc in barcodes_unique){
     data_aux <- bc_reads[hp_vec,]
     if(all(data_aux$nucleotide=="-")){next()}
     
-    pos = data_aux$position
-    nucl = data_aux$nucleotide
+    pos <- data_aux$position
+    nucl <- data_aux$nucleotide
     ind_order <- c(which(nucl!="-"),which(nucl=="-"))
     
     bc_reads$position[hp_vec] <- pos[order(ind_order)]
@@ -2034,14 +2036,14 @@ for( bc in barcodes_unique){
   if(n_noweight==0){n_noweight=1;muts_noweight="wildtype"}
   n_tot = n_single+n_nanopore+n_noweight
       
-  df = data.frame(barcode = rep(bc,n_tot),nseqs=length(unique(bc_reads$readID)),
+  df <- data.frame(barcode = rep(bc,n_tot),nseqs=length(unique(bc_reads$readID)),
                   mutation=c(muts_single,muts_nanopore,muts_noweight),
                   method = c(rep("single", n_single),
                              rep("nanopore",n_nanopore),
                              rep("no_weights",n_noweight)))
   
   write.table(df, append = T, col.names = F,row.names = F, file = file_out_consensus)
-  counter= counter+1
+  counter <- counter+1
   setTxtProgressBar(pb,counter)
 }
 toc <- proc.time()
@@ -2057,12 +2059,12 @@ Prepare fast5 files for Nanopolish. Please indicate proper paths indicated in ca
 tic <- proc.time()
 dir.create(paste0(path_analysis_lib,"/fast5files/") )# individual fast5 files will be stored there temporally 
 
-split_fast5 = paste0("multi_to_single_fast5 -i 2_NanoporeRawReads/LargeSet_fast5 -s 3_Analysis/KTLib/fast5files/")  #PATH_TO_FAST5_FILES location of nanopore reads
-system(split_fast5)
+split_fast5 <- paste0("multi_to_single_fast5 -i 2_NanoporeRawReads/LargeSet_fast5 -s 3_Analysis/KTLib/fast5files/")  #PATH_TO_FAST5_FILES location of nanopore reads
+system2(split_fast5)
 
 # Place them in folders according to barcode
-single_files       = dir(paste0(path_analysis_lib,"/fast5files/"), full.names = T, recursive = T)
-single_files_name  = dir(paste0(path_analysis_lib,"/fast5files/"), full.names = F, recursive = T)
+single_files       <- dir(paste0(path_analysis_lib,"/fast5files/"), full.names = T, recursive = T)
+single_files_name  <- dir(paste0(path_analysis_lib,"/fast5files/"), full.names = F, recursive = T)
 
 single_files <- data.frame(file=single_files, readID=single_files_name) %>%
   mutate(readID = sub(readID, pattern=".fast5",replacement="")) %>%
@@ -2073,21 +2075,21 @@ nrow_bc <- nrow(barcodes_table_fourcounts)
 pb <- txtProgressBar(min = 0, max = nrow_bc, style = 3)
 for(i in 1:nrow_bc){
   setTxtProgressBar(pb,i)
-  seqid = barcodes_table_fourcounts$readID[i]
-  barcode = barcodes_table_fourcounts$BCsequence[i]
+  seqid <- barcodes_table_fourcounts$readID[i]
+  barcode <- barcodes_table_fourcounts$BCsequence[i]
   barcode_dir <- paste0(path_analysis_lib,"fast5files/",barcode)
-  file = barcodes_table_fourcounts$file[i]
+  file <- barcodes_table_fourcounts$file[i]
   if(!dir.exists(barcode_dir)){ dir.create(barcode_dir)}
-  command = paste0("cp ", file, " ",barcode_dir)
-  system(command)
+  command <- paste0("cp ", file, " ",barcode_dir)
+  system2(command)
 }
 
 # Create unique fast5 file per barcode
 pb <- txtProgressBar(min = 0, max = nrow_bc, style = 3)
 for(bc in barcodesID){
   setTxtProgressBar(pb,bc)
-  command = paste0("single_to_multi_fast5 -i 3_Analysis/KTLib/fast5files/",bc," -s 3_Analysis/KTLib/fast5files_byBC/ -f ",bc)
-  system(command)
+  command <- paste0("single_to_multi_fast5 -i 3_Analysis/KTLib/fast5files/",bc," -s 3_Analysis/KTLib/fast5files_byBC/ -f ",bc)
+  system2(command)
 }
 
 barcodes_table_fourcounts <- barcodes_table_fourcounts %>% select(-file)
@@ -2111,7 +2113,7 @@ fastq_files <- dir(paste0(path_analysis_lib,"/fastq/"), full.names = T, pattern=
 fasta_files <- str_replace_all(fastq_files, "fastq", "fasta")
 dir.create(paste0(path_analysis_lib,"/fasta/"))
 commands <- paste0("seqtk seq -a ", fastq_files, " > ",fasta_files)
-sapply(commands, system)
+vapply(commands, system2)
 
 toc <- proc.time()
 cat("it took" , (toc-tic)[3], "s to run this chunk\n"); rm(tic, toc)
@@ -2198,8 +2200,8 @@ Parse results into a table consensus_mismatches
 
 ```{r LIBconsensus parse, eval=F}
 tic <- proc.time()
-pos_initial=1
-pos_final=length(wildtype)
+pos_initial <- 1
+pos_final <- length(wildtype)
 
 cigar_reference_counts   <- c("M","D","N","=","X")
 cigar_query_counts <- c("M","I","S","=","X")
@@ -2235,7 +2237,7 @@ for(i in 1:nrow(sam_data_medaka)){
   mismatches$Position[rows_with_reference] <- 1:length(wildtype) #position - according to single reference
   mismatches$base.original[rows_with_reference]   <- wildtype
 
-  index = which(mismatches$base.mutated!=mismatches$base.original)
+  index <- which(mismatches$base.mutated!=mismatches$base.original)
   
   mismatches <- mismatches[index,c("Barcode", "Position","base.original","base.mutated")]
   medaka_mismatches <- medaka_mismatches %>% rbind(mismatches) 
@@ -2274,7 +2276,7 @@ for(i in 1:nrow(sam_data_racon)){
   mismatches$Position[rows_with_reference] <- 1:length(wildtype) #position - according to single reference
   mismatches$base.original[rows_with_reference]   <- wildtype
 
-  index = which(mismatches$base.mutated!=mismatches$base.original)
+  index <- which(mismatches$base.mutated!=mismatches$base.original)
   
   mismatches <- mismatches[index,c("Barcode", "Position","base.original","base.mutated")]
   racon_mismatches <- racon_mismatches %>% rbind(mismatches) 
@@ -2283,7 +2285,7 @@ for(i in 1:nrow(sam_data_racon)){
 racon_mismatches <- racon_mismatches %>% filter(!is.na(Barcode)) %>% mutate(method="Racon", mutation=paste0(base.original,Position,base.mutated))
 
 results_nanopolish <- readLines("ConsensusbyNanopolish.txt")
-results_nanopolish <- do.call(rbind,sapply(results_nanopolish, strsplit, split="\t"))
+results_nanopolish <- do.call(rbind,vapply(results_nanopolish, strsplit, split="\t"))
 colnames(results_nanopolish) <- rownames(results_nanopolish) <- NULL
 results_nanopolish <- results_nanopolish[,c(1,3,5,6)]
 colnames(results_nanopolish) <- c("Barcode","Position","base.original","base.mutated")
@@ -2294,7 +2296,7 @@ results_nanopolish <- results_nanopolish %>% filter(!is.na(Barcode))
 
 #remove insertions
 ind_insertions <- nchar(results_nanopolish$base.mutated)>1
-results_nanopolish$base.mutated[ind_insertions] <- sapply(results_nanopolish$base.mutated[ind_insertions] , substr,1,1)
+results_nanopolish$base.mutated[ind_insertions] <- vapply(results_nanopolish$base.mutated[ind_insertions] , substr,1,1)
 results_nanopolish <- results_nanopolish %>% filter(base.mutated!=base.original)
 
 #Split deletions
@@ -2414,7 +2416,7 @@ data_single_ktlib_topten <- data_single_ktlib %>%
 cat("Barcode\tNreads\trepetition\tmutation\tmethod\n", file=file_out_consensus_topten, append=F)
 
 barcodes_unique <- unique(data_single_ktlib_topten$BCsequence)
-n_bc = length(barcodes_unique)
+n_bc <- length(barcodes_unique)
 
 for(bc in barcodes_unique){
     cat(bc, "\n")
@@ -2425,10 +2427,10 @@ for(bc in barcodes_unique){
   bc_seqsID <- unique(bc_reads$readID)
   for( s in subsets){
     cat(s, "\t")
-    counter=0
+    counter<- 0
     pb <- txtProgressBar(0,n_repetitions,style=3)
     for (r in 1:n_repetitions) {
-      counter= counter+1
+      counter <- counter+1
       setTxtProgressBar(pb,counter)
   
       subset_bc_reads <- bc_reads %>% 
@@ -2441,7 +2443,7 @@ for(bc in barcodes_unique){
     for(n in index_homopolymers){
         if(n %in% n_memory){next()}
         hp_pos <- subset_bc_reads$position[n]
-        hp_pos_ref <- wt_homopolymers[sapply(wt_homopolymers, function(x){hp_pos %in% x})][[1]]
+        hp_pos_ref <- wt_homopolymers[vapply(wt_homopolymers, function(x){hp_pos %in% x})][[1]]
         hp_vec_logical <- hp_pos_ref==hp_pos
         hp_vec_length <- length(hp_vec_logical)
         hp_vec <- rep(NA,hp_vec_length)
@@ -2456,8 +2458,8 @@ for(bc in barcodes_unique){
         data_aux <- subset_bc_reads[hp_vec,]
         if(all(data_aux$nucleotide=="-")){next()}
         
-        pos = data_aux$position
-        nucl = data_aux$nucleotide
+        pos <- data_aux$position
+        nucl <- data_aux$nucleotide
         ind_order <- c(which(nucl!="-"),which(nucl=="-"))
         
         subset_bc_reads$position[hp_vec] <- pos[order(ind_order)]
@@ -2482,12 +2484,12 @@ for(bc in barcodes_unique){
     muts_guppy    <- detect_mutations(biostr_to_char(cons_guppy), wildtype)
     muts_noweight <- detect_mutations(biostr_to_char(cons_noweight), wildtype)
 
-      n_single = length(muts_single)
-      n_guppy = length(muts_guppy)
-      n_noweight = length(muts_noweight)
-        n_tot = n_single+n_guppy+n_noweight
+      n_single <- length(muts_single)
+      n_guppy <- length(muts_guppy)
+      n_noweight <- length(muts_noweight)
+      n_tot <- n_single+n_guppy+n_noweight
       if(n_tot==0){next()}
-      df = data.frame(barcode = rep(bc,n_tot),nseqs=s,repetition=r,
+      df <- data.frame(barcode = rep(bc,n_tot),nseqs=s,repetition=r,
                       mutation=c(muts_single,muts_guppy,muts_noweight),
                       method = c(rep("SINGLe", n_single),
                                  rep("Guppy",n_guppy), 
@@ -2633,8 +2635,8 @@ file_consensus_top10_inLIB <- paste0(path_analysis_lib,"Convergence_10top_mismat
 
 ```{r LIB10BCs consensus to muts, eval=FALSE}
 tic <- proc.time()
-pos_initial=1
-pos_final=length(wildtype)
+pos_initial <- 1
+pos_final <- length(wildtype)
 
 cigar_reference_counts   <- c("M","D","N","=","X")
 cigar_query_counts <- c("M","I","S","=","X")
@@ -2669,22 +2671,22 @@ for(i in 1:nrow(sam_data_medaka)){
   mismatches$Position[rows_with_reference] <- 1:length(wildtype) #position - according to single reference
   mismatches$base.original[rows_with_reference]   <- wildtype
 
-  index = which(mismatches$base.mutated!=mismatches$base.original)
+  index <- which(mismatches$base.mutated!=mismatches$base.original)
   
   mismatches <- mismatches[index,c("Barcode", "Position","base.original","base.mutated")]
   medaka_mismatches_subsets <- medaka_mismatches_subsets %>% rbind(mismatches) 
 }
 
 medaka_mismatches_subsets <- medaka_mismatches_subsets %>% filter(!is.na(Barcode))
-medaka_aux <- do.call(rbind,sapply(medaka_mismatches_subsets[,1],strsplit,split="_"))
+medaka_aux <- do.call(rbind,vapply(medaka_mismatches_subsets[,1],strsplit,split="_"))
 medaka_mismatches_subsets <- medaka_mismatches_subsets %>% mutate(Barcode = medaka_aux[,1], Nreads=as.numeric(medaka_aux[,2]), repetition=as.numeric(medaka_aux[,3]))
 medaka_mismatches_subsets <- medaka_mismatches_subsets  %>% mutate(Method="Medaka", homopolymers=NA, mutation=paste0(base.original,Position,base.mutated)) %>% dplyr::rename(repetition=repetitions) 
 
 nanopolish_mismatches_subsets = data.frame(barcode=NA,nseqs=NA,repetition=NA,position=NA,base.original=NA,base.mutated=NA)
-results_nanopolish <- system(paste0("awk \'/^[^#]/ \' BCtopten/nanopolish_consensus/*"), intern = T)
-results_nanopolish <- do.call(rbind,sapply(results_nanopolish, strsplit, split="\t"))
+results_nanopolish <- system2(paste0("awk \'/^[^#]/ \' BCtopten/nanopolish_consensus/*"), intern = T)
+results_nanopolish <- do.call(rbind,vapply(results_nanopolish, strsplit, split="\t"))
 results_nanopolish <- results_nanopolish[,c(1,3,5,6)]
-nanopolish_aux <- do.call(rbind,sapply(results_nanopolish[,1],strsplit,split="_"))
+nanopolish_aux <- do.call(rbind,vapply(results_nanopolish[,1],strsplit,split="_"))
 results_nanopolish <- cbind(nanopolish_aux,results_nanopolish[,-1])
 colnames(results_nanopolish) <- c("Barcode","Nreads","repetition", "Position","base.original","base.mutated" )
 rownames(results_nanopolish) <- NULL
@@ -2697,7 +2699,7 @@ nanopolish_mismatches_subsets <- data.frame(Barcode = results_nanopolish[,1],
 
 #remove insertions
 ind_insertions <- nchar(nanopolish_mismatches_subsets$base.mutated)>1
-nanopolish_mismatches_subsets$base.mutated[ind_insertions] <- sapply(nanopolish_mismatches_subsets$base.mutated[ind_insertions] , substr,1,1)
+nanopolish_mismatches_subsets$base.mutated[ind_insertions] <- vapply(nanopolish_mismatches_subsets$base.mutated[ind_insertions] , substr,1,1)
 nanopolish_mismatches_subsets <- nanopolish_mismatches_subsets %>% filter(base.mutated!=base.original)
 
 #Split deletions
@@ -3132,7 +3134,7 @@ ggsave(Figure3, file=paste0(path_save_figures,"Figure3.png"),
 kit_rates <- data.frame(
     Mutation=c("Deletion", "Ts AG TC" ,"Ts GA CT"  ,"Tv AT TA","Tv AC TG" ,"Tv GC CG", "Tv GT CA"),
     true_perc=c(4.8,17.5,25.5,28.5,4.7,4.1,14.1))
-aux = KTLib_mutations %>% 
+aux <- KTLib_mutations %>% 
     left_join(KTLib_nreads_per_barcode,by="Barcode") %>%
     mutate(reads_number = case_when(
         Nreads<6 ~ "4 or 5 reads", 
@@ -3171,7 +3173,7 @@ plot_mr_xy <- ggplot(aux, aes(col=Method, x=true_perc, y=counts, shape=Mutation,
     ylab("Observed (%)")+theme_plot+ggtitle("Mutation rate")
 
 
-plot_mr_cor<-ggplot(aux %>% group_by(Method, reads_number) %>% 
+plot_mr_cor <- ggplot(aux %>% group_by(Method, reads_number) %>% 
            summarise(cor=cor(counts, true_perc)) %>% 
            ungroup(), aes(x=reads_number, y=cor, col=Method))+
     geom_point()+
@@ -3233,7 +3235,7 @@ plot_counts_RSQ <- ggplot(full_fits,aes(x=rqs,y=counts_mut))+
     scale_color_manual(values=hex)+
     labs(x="Quality (Q)", y="Counts(C)")+theme(legend.position = "none")
 
-xlim = 1:50
+xlim <- 1:50
 plots <- list()
 for(i in 1:nrow(full_fits_mut_examples)){
     nuc <- full_fits_mut_examples$nuc[i]
@@ -3371,11 +3373,11 @@ Depricated nextpolish:
 # }
 # 
 # 
-# path0 = "/home/respada/22nextpolish/bc06/"
+# path0 <- "/home/respada/22nextpolish/bc06/"
 # setwd(path0)
-# run_folder  = "RunFolder/"
-# save_folder = ""
-# data_folder = ""
+# run_folder  <- "RunFolder/"
+# save_folder <- ""
+# data_folder <- ""
 # 
 # for(bc in kt7_barcodes){
 # 
@@ -3398,16 +3400,16 @@ Depricated nextpolish:
 #             writeLines(text = all_sequences[choose_lines_all], con = file(filename_subset))
 # 
 #             ## Run nextpolish
-#             system(paste0("echo '", subset_name,".fastq' >", run_folder, "lgs.fofn"))
+#             system2(paste0("echo '", subset_name,".fastq' >", run_folder, "lgs.fofn"))
 #             create_run_cfg(run_cfg_file=paste0(run_folder, "run.cfg"),
 #                            ref_fasta=reference_file,
 #                            workdir=paste0(subset_name,"/"))
-#             system(paste0("cp ", reference_file, " ",run_folder, reference_file ))
-#             system(paste0("cd ",run_folder,"; nextPolish run.cfg"))
-#             system(paste0("sed -i '1s/.*/>",subset_name,"'/ ", run_folder, subset_name, "/genome.nextpolish.fasta "))
-#             system(paste0("cat ",run_folder, subset_name, "/genome.nextpolish.fasta >>", save_file))
-#             system(paste0("rm -r ", run_folder, subset_name))
-#             system(paste0("cd ",run_folder,";rm lgs.fofn  run.cfg"))
+#             system2(paste0("cp ", reference_file, " ",run_folder, reference_file ))
+#             system2(paste0("cd ",run_folder,"; nextPolish run.cfg"))
+#             system2(paste0("sed -i '1s/.*/>",subset_name,"'/ ", run_folder, subset_name, "/genome.nextpolish.fasta "))
+#             system2(paste0("cat ",run_folder, subset_name, "/genome.nextpolish.fasta >>", save_file))
+#             system2(paste0("rm -r ", run_folder, subset_name))
+#             system2(paste0("cd ",run_folder,";rm lgs.fofn  run.cfg"))
 #             
 #         }
 #     }
@@ -3448,7 +3450,7 @@ for(i in seq(a)){
         replace_qscore <- apply(both,1, min)
     }
     replace_qscore <- lapply(replace_qscore, function(x){as(x,"PhredQuality")})
-    replace_qscore_v <- sapply(seq(replace_qscore), function(x){paste0(rep(replace_qscore[[x]], times=width(pos_to_replace)[x]), collapse="")})
+    replace_qscore_v <- vapply(seq(replace_qscore), function(x){paste0(rep(replace_qscore[[x]], times=width(pos_to_replace)[x]), collapse="")})
     # print(scores_aligned[[i]])
     scores_aligned[i] <- replaceAt(scores_aligned[i],at = pos_to_replace, value = replace_qscore_v)
     # print(scores_aligned[[i]])
@@ -3468,10 +3470,10 @@ for(i in seq(length(reads_aligned))){
     # if(verbose){utils::setTxtProgressBar(pb,i)}
     ## REPLACE DELETION SCORES
     del_positions <- BiocGenerics::start(Biostrings::vmatchPattern("-",reads_aligned[i])[[1]])
-    ndel = length(del_positions)
+    ndel <- length(del_positions)
     
     if(ndel==0){next()}
-    nr = width(reads_aligned)[i]
+    nr <- width(reads_aligned)[i]
     
     #If they are at the beginning, I replace by the first Qscore
     if(del_positions[1]==1){
@@ -3499,23 +3501,23 @@ for(i in seq(length(reads_aligned))){
         Breaks <- c(0, which(diff(del_positions) != 1), length(del_positions))
         Breaks_ini <- Breaks[length(Breaks)-1]+1
         Breaks_end <- Breaks[length(Breaks)]
-        del_pos_ini = del_positions[Breaks_ini]
-        del_pos_end = del_positions[Breaks_end]
+        del_pos_ini <- del_positions[Breaks_ini]
+        del_pos_end <- del_positions[Breaks_end]
         replacement <- paste0(rep(as.character(subseq(scores_aligned[i], del_pos_ini-1, del_pos_ini-1)), Breaks_end-Breaks_ini+1),collapse="")
         scores_aligned[i] <-Biostrings::replaceAt(scores_aligned[i],
                                                   at=IRanges(del_pos_ini,del_pos_end),
                                                   replacement)
-        n_del_end = length(Breaks_ini:Breaks_end)
+        n_del_end <- length(Breaks_ini:Breaks_end)
     }else{n_del_end=NA}
     
     if(!is.na(n_del_end)){del_positions <- del_positions[-seq(ndel-n_del_end+1,ndel)]}
     if(!is.na(n_del_start)){del_positions <- del_positions[-seq(n_del_start)]}
     if(length(del_positions)==0){next()}
-    ndel = length(del_positions)
+    ndel <- length(del_positions)
     for(j in seq_along(del_positions)){
-        jmin = j
+        jmin <- j
         while(j < ndel && del_positions[j+1]==del_positions[j]+1){ j <- j+1 }
-        jmax=j
+        jmax<-j
         
         q_upstr <- subseq(scores_aligned[i], del_positions[jmin]-1, del_positions[jmin]-1)
         q_dwstr <- subseq(scores_aligned[i], del_positions[jmax]+1, del_positions[jmax]+1)
@@ -3545,3 +3547,10 @@ t3-t2
 
 ```
 
+
+
+# Session info {.unnumbered}
+
+```{r sessionInfo, echo=FALSE}
+sessionInfo()
+```
