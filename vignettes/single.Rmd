@@ -160,19 +160,6 @@ evaluated_fits <- evaluate_fits(pos_range = c(1,5),q_range = c(0,10),
 head(evaluated_fits)
 ```
 
-Compute one consensus sequence weighted by QUAL values.
-```{r}
-data_barcode <- data.frame(
-    nucleotide=unlist(sapply(as.character(corrected_reads),strsplit, split="")),
-    p_SINGLe=unlist(1-as(Biostrings::quality(corrected_reads),"NumericList")),
-    pos=rep(1:Biostrings::width(corrected_reads[1]),length(corrected_reads)))
-consensus_seq <- weighted_consensus(df = data_barcode, cutoff_prob = 0.9)
-consensus_seq
-another_consensus_seq <- weighted_consensus(df = data_barcode, cutoff_prob = 0.999)
-another_consensus_seq
-list_mismatches(ref_seq[[1]],another_consensus_seq)
-```
-
 
 
 # Session info {.unnumbered}
